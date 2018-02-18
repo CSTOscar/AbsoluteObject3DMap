@@ -7,11 +7,14 @@ from research.object_detection.utils import label_map_util
 if tf.__version__ < '1.4.0':
     raise ImportError('Please upgrade your tensorflow installation to v1.4.* or later!')
 
-LABEL_FILE_DIR = 'label_files'
-MODEL_FILE_DIR = 'model_files'
-IMAGE_DIR = 'temp_files/images'
-RESULT_DIR = 'temp_files/results'
+DATA_DIR = '../data'
+
+LABEL_FILE_DIR = os.path.join(DATA_DIR, 'label_files')
+MODEL_FILE_DIR = os.path.join(DATA_DIR, 'model_files')
+IMAGE_DIR = os.path.join(DATA_DIR, 'temp_files/images')
+RESULT_DIR = os.path.join(DATA_DIR, 'temp_files/results')
 IMAGE_NAME_FORMAT = 'image{}.jpg'
+DETECTION_RESULT_FILE_NAME = 'image_detection_record'
 
 
 def detection(model_name, ckpt_file_name, label_file_name, max_num_classes, image_name_format, num_image):
@@ -19,6 +22,8 @@ def detection(model_name, ckpt_file_name, label_file_name, max_num_classes, imag
     label_file_path = os.path.join(LABEL_FILE_DIR, label_file_name)
 
     # load file from
+
+    print('Loading tensorflow graph')
     detection_graph = tf.Graph()
     with detection_graph.as_default():
         od_graph_def = tf.GraphDef()
@@ -27,6 +32,8 @@ def detection(model_name, ckpt_file_name, label_file_name, max_num_classes, imag
             od_graph_def.ParseFromString(serialized_graph)
             tf.import_graph_def(od_graph_def, name='')
 
+    print('Loading label file')
+
     label_map = label_map_util.load_labelmap(label_file_path)
     categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=max_num_classes,
                                                                 use_display_name=True)
@@ -34,7 +41,7 @@ def detection(model_name, ckpt_file_name, label_file_name, max_num_classes, imag
 
     image_path_format = os.path.join(IMAGE_DIR, image_name_format)
 
-    results = []
+    results = {}
 
     with detection_graph.as_default():
         with tf.Session(graph=detection_graph) as sess:
@@ -61,16 +68,16 @@ def detection(model_name, ckpt_file_name, label_file_name, max_num_classes, imag
                     feed_dict={image_tensor: image_np_expanded})
 
                 result = create_image_detection_record(boxes[0], scores[0], classes[0], num[0])
-                results.append(result)
-                print(image_path, ' result:')
-                print(type(boxes))
-                print(boxes.shape)
-                print(boxes)
-                print(scores)
-                print(classes)
-                print(num)
-                print("progress check: " + image_path + " Done.")
-                np.save(os.path.join(RESULT_DIR, 'image{}_result'.format(image_index)), results)
+                results[IMAGE_NAME_FORMAT.format(image_index)] = result
+                # print(image_path, ' result:')
+                # print(type(boxes))
+                # print(boxes.shape)
+                # print(boxes)
+                # print(scores)
+                # print(classes)
+                # print(num)
+                print("progress check: " + image_path + " Done. total " + str(num_image))
+            np.save(os.path.join(RESULT_DIR, DETECTION_RESULT_FILE_NAME), results)
     return results
 
 
