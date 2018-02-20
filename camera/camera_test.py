@@ -8,7 +8,7 @@ import numpy as np
 # TODO: this is the most vulnerable, need more test
 
 R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-T = np.asmatrix([[0], [0], [0]])
+T = np.asmatrix([[10], [10], [10]])
 camera1 = camera.Camera(86500, 86500, 0.035, 2448 / 2, 3264 / 2, R, T)
 
 print('K,RT check')

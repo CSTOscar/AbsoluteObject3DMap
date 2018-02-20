@@ -49,6 +49,9 @@ class Camera:
 
     def update_extrinsic_parameters_by_camera_position_orientation(self, position, orientation):
         self.R, self.T = camera_translation_rotation_to_R_and_T(position, orientation)
+        self.RT = generate_RT_from_R_T(self.R, self.T)
+        self.M = self.K @ self.RT
+        self.M_pinv = np.linalg.pinv(self.M)
 
     def world_to_pixel(self, world_coordinate):
         ans = self.M @ world_coordinate
@@ -60,14 +63,23 @@ class Camera:
         return ans
 
     def pixel_depth_to_world(self, pixel_coordinate, depth):
+        print('pixel coordinate: ', pixel_coordinate)
+        print('depth', depth)
         P, O = self.generate_camera_position_orientation_from_R_T()
+        print('camera position:', P)
         Z = O @ np.asmatrix([[0], [0], [1]])
-        E = self.pixel_to_world(pixel_coordinate)[0:3]
-        D0 = (E - P)
+        E4 = self.pixel_to_world(pixel_coordinate)
+        # TODO: argue that if the E_4 is 0, the camera position must be at 0
+        E3 = E4[0:3] / (E4[3][0] if E4[3][0] != 0 else 1.0)
+        print('E3', E3)
+        print('E4', E4)
+        D0 = (E3 - P)
         D0 = D0 / np.linalg.norm(D0)
         D = D0 * (-1 if (D0.T @ Z)[0][0] < 0 else 1)
-
-        return P + depth * D
+        print('D: ', D)
+        world_coordinate = P + depth * D
+        print('world coordinate: ', world_coordinate)
+        return world_coordinate
 
     def get_cov_by_depth(self, depth):
         return depth * self.cov
