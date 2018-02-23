@@ -4,6 +4,31 @@ import functools
 
 # WARNING: this is a right handed coordinate system
 
+def position_direction_rotation_input_adapter(method):
+    @functools.wraps(method)
+    def adapted_method(*args, **kwargs):
+        args = list(args)
+        for i in range(len(args)):
+            arg = args[i]
+            if isinstance(arg, tuple) or isinstance(arg, list) or \
+                    isinstance(arg, np.matrix) or isinstance(arg, np.ndarray):
+                arg = np.asarray(arg).flatten()
+                # print(arg)
+                arg_len = len(arg)
+                if arg_len == 3:
+                    arg = np.asmatrix(arg.reshape((3, 1)))
+                elif arg_len == 9:
+                    arg = np.asmatrix(arg.reshape((3, 3)))
+            # else:
+            #     print('FATAL: invalid input for ', method.__name__)
+            args[i] = arg
+
+        # print(args)
+
+        return method(*args, **kwargs)
+
+    return adapted_method
+
 
 def coordinates_input_output_adapter(method):
     @functools.wraps(method)
@@ -110,12 +135,14 @@ class Camera:
         R_inv = np.linalg.inv(self.R)
         return -R_inv @ self.T, R_inv
 
+    @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_rotation(self, position, rotation):
         self.R, self.T = Camera.camera_position_rotation_to_R_T(position, rotation)
         self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
         self.M = self.K @ self.RT
         self.M_pinv = np.linalg.pinv(self.M)
 
+    @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_direction(self, position, direction):
         rotation = Camera.generate_rotation_from_direction(direction)
         self.update_extrinsic_parameters_by_camera_position_rotation(position, rotation)

@@ -22,14 +22,14 @@ def generate_R_inv_from_direction_test(D):
 
 def camera_test():
     print('---TEST---Camera---BEGIN---')
-    direction = np.asmatrix([[1], [0], [0]])
-    position = np.asmatrix([[1], [1], [1]])
+    direction = [1, 0, 0]
+    position = [1, 1, 1]
     R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     T = np.asmatrix([[10], [10], [10]])
     camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
     camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
     depth = 1
-    pixel_coordinate = [1632*2, 1224]
+    pixel_coordinate = [1632 * 2, 1224]
     world_coordinate = camera.pixel_depth_to_world(pixel_coordinate, depth)
     print(world_coordinate)
     world_coordinate2 = camera.pixel_to_world(pixel_coordinate)
