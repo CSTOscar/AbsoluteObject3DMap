@@ -1,8 +1,8 @@
-class Object:
+class ObjectProjection:
     id_seed = 0
 
     def __init__(self, frame_id, clazz, confidence, position, err_cov):
-        self.id = Object.get_unique_id()
+        self.id = ObjectProjection.get_unique_id()
         self.frame_id = frame_id
         self.clazz = clazz
         self.confidence = confidence
@@ -16,13 +16,16 @@ class Object:
 
     def __str__(self):
         return 'id: ' + str(self.id) \
-               + '\n frame_id: ' \
+               + '\nframe_id: ' \
                + str(self.frame_id) \
-               + '\n class: ' \
+               + '\nclass: ' \
                + str(self.clazz) \
-               + '\n confidence: \n' \
+               + '\nconfidence: \n' \
                + str(self.confidence) \
-               + '\n position : \n' \
+               + '\nposition : \n' \
                + str(self.position) \
-               + '\n err_cov: \n' \
+               + '\nerr_cov: \n' \
                + str(self.err_cov)
+
+    def distance(self, obj):
+        return

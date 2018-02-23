@@ -20,6 +20,6 @@ for i in range(8):
 
     SLAM_results[image_name_format.format(i)] = result
 
-print('the shape of the depth map', SLAM_results['image0.jpg'])
+print('the shape of the depth map', SLAM_results['image5.jpg'])
 
 np.save('../data/temp_files/results/image_SLAM_record', SLAM_results)
