@@ -1,36 +1,45 @@
 import camera as camera_
 import numpy as np
 
-print('---TEST---def generate_R_inv_from_direction(D)---BEGIN---')
-Z = np.asmatrix([[0.0], [0.0], [1.0]])
-test_case = [np.asmatrix(np.random.normal(1, 1, (3, 1))) for _ in range(10)]
-print('test case')
-print(test_case)
 
-test_case.append(-Z)
-R_invs = []
-validation_ground_truth = []
-for A in test_case:
-    R_invs.append(camera_.Camera.generate_rotation_from_direction(A))
-    validation_ground_truth.append(A / np.linalg.norm(A))
-validation = [R_invs[i] @ Z - validation_ground_truth[i] for i in range(len(R_invs))]
-print(validation)
-print('---TEST---def generate_R_inv_from_direction(D)---END---')
+def generate_R_inv_from_direction_test(D):
+    print('---TEST---def generate_R_inv_from_direction(D)---BEGIN---')
+    Z = np.asmatrix([[0.0], [0.0], [1.0]])
+    test_case = [np.asmatrix(np.random.normal(1, 1, (3, 1))) for _ in range(10)]
+    print('test case')
+    print(test_case)
 
-print('---TEST---Camera---BEGIN---')
-direction = np.asmatrix([[1], [1], [1]])
-position = np.asmatrix([[13], [13], [13]])
-R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-T = np.asmatrix([[10], [10], [10]])
-camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
-camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
-print(camera.R)
-print(camera.M)
-depth = 1
-pixel_coordinate = np.asmatrix([[1632], [1224], [1.0]])
-world_coordinate = camera.pixel_depth_to_world(pixel_coordinate, depth)
-print(world_coordinate)
-print('---TEST---Camera---END---')
+    test_case.append(-Z)
+    R_invs = []
+    validation_ground_truth = []
+    for A in test_case:
+        R_invs.append(camera_.Camera.generate_rotation_from_direction(A))
+        validation_ground_truth.append(A / np.linalg.norm(A))
+    validation = [R_invs[i] @ Z - validation_ground_truth[i] for i in range(len(R_invs))]
+    print(validation)
+    print('---TEST---def generate_R_inv_from_direction(D)---END---')
+
+
+def camera_test():
+    print('---TEST---Camera---BEGIN---')
+    direction = np.asmatrix([[1], [0], [0]])
+    position = np.asmatrix([[1], [1], [1]])
+    R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    T = np.asmatrix([[10], [10], [10]])
+    camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
+    camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
+    depth = 1
+    pixel_coordinate = [1632*2, 1224]
+    world_coordinate = camera.pixel_depth_to_world(pixel_coordinate, depth)
+    print(world_coordinate)
+    world_coordinate2 = camera.pixel_to_world(pixel_coordinate)
+    print(world_coordinate2)
+    pixel_coordinate_back = camera.world_to_pixel(world_coordinate2)
+    print(pixel_coordinate_back)
+    pixel_coordinate_back = camera.world_to_pixel(world_coordinate)
+    print(pixel_coordinate_back)
+    print('---TEST---Camera---END---')
+
 
 # ground measure
 # obj: 0.19  dist: 0.235 foc: 0.035 pix: 2448 mx: 86500
@@ -67,3 +76,5 @@ print('---TEST---Camera---END---')
 # print(coordinate_pixel_again)
 #
 # print(camera1.generate_camera_position_orientation_from_R_T()[1])
+
+camera_test()
