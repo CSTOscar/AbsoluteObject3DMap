@@ -29,11 +29,12 @@ for key in slam_info.keys():
 
 clazz = set([])
 for projection in world.objects_projection:
-    clazz.add(projection.clazz)
+    clazz.add(projection['class'])
 
 print(clazz)
 
 print('object unify begins ------------------------------')
 world.unify_objects_projection_get_object()
 
-print(world.objects)
+for obj in world.objects:
+    print(obj['class'], obj['position'])

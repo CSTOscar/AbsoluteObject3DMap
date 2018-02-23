@@ -17,9 +17,10 @@ class World:
         map_class_to_projection = {}
         for projection in self.objects_projection:
             # print(projection)
-            if not (projection.clazz in map_class_to_projection.keys()):
-                map_class_to_projection[projection.clazz] = []
-            map_class_to_projection[projection.clazz].append(projection)
+            projection_class = projection['class']
+            if not (projection_class in map_class_to_projection.keys()):
+                map_class_to_projection[projection_class] = []
+            map_class_to_projection[projection_class].append(projection)
 
         new_objects = []
 
@@ -30,7 +31,7 @@ class World:
                 continue
                 # TODO: handle this later
 
-            projection_position = list(map(lambda e: np.array(e.position).flatten(), projections))
+            projection_position = list(map(lambda e: e['position'], projections))
 
             projection_bayesian_gaussian_mixture = mixture.BayesianGaussianMixture(
                 n_components=len(projection_position) // 2 + 1,
@@ -65,9 +66,9 @@ class World:
                 for projection in projections_group:
                     print(projection)
                 print('-----------end------------')
-                frame_list = list(map(lambda e: e.frame_id, projections_group))
+                frame_list = list(map(lambda e: e['frame_id'], projections_group))
                 frame_set = set(frame_list)
-                class_list = list(map(lambda e: e.clazz, projections_group))
+                class_list = list(map(lambda e: e['class'], projections_group))
                 class_set = set(class_list)
 
                 if len(class_set) != 1:
@@ -80,7 +81,7 @@ class World:
                     print(max_repeat)
                     projection_group_gaussian_mixture = mixture.GaussianMixture(n_components=max_repeat,
                                                                                 covariance_type='full')
-                    projections_group_position = list(map(lambda e: np.array(e.position).flatten(), projections_group))
+                    projections_group_position = list(map(lambda e: e['position'], projections_group))
                     projection_group_gaussian_mixture.fit(projections_group_position)
 
                     if not projection_group_gaussian_mixture.converged_:
@@ -110,4 +111,4 @@ class World:
 
     @staticmethod
     def new_object(position, precision, clazz):
-        return {'position': position, 'precision': precision, 'clazz': clazz}
+        return {'position': position, 'precision': precision, 'class': clazz}
