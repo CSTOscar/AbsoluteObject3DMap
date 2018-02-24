@@ -2,6 +2,7 @@ import world_model.world as world_
 from camera import camera as camera_
 from frame import frame as frame_
 import numpy as np
+import json
 
 world = world_.World()
 
@@ -38,3 +39,12 @@ world.unify_objects_projection_get_object()
 
 for obj in world.objects:
     print(obj['class'], obj['position'])
+
+print(type(world.objects[0]['precision'][1]))
+print(type(world.objects[0]['position']))
+print(type(world.objects[0]['class']))
+print(type(world.objects))
+
+fp = open('../data/temp_files/results/object_data.txt', 'w')
+json_obj = json.dump(world.objects, fp)
+print(json_obj)

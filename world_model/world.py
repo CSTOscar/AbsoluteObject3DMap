@@ -98,17 +98,17 @@ class World:
                         print('WARNING: fail to distinguish the object has the same class')
                     for i in range(max_repeat):
                         new_objects.append(
-                            World.new_object(projection_group_mixture_means[i],
-                                             projection_group_mixture_precisions[i],
+                            World.new_object(list(projection_group_mixture_means[i]),
+                                             projection_group_mixture_precisions[i].tolist(),
                                              list(class_set)[0]))
                 else:
                     new_objects.append(
-                        World.new_object(projection_mixture_means[cluster_index],
-                                         projection_mixture_precision[cluster_index],
+                        World.new_object(list(projection_mixture_means[cluster_index]),
+                                         projection_mixture_precision[cluster_index].tolist(),
                                          list(class_set)[0]))
 
         self.objects = new_objects
 
     @staticmethod
     def new_object(position, precision, clazz):
-        return {'position': position, 'precision': precision, 'class': clazz}
+        return {'position': position, 'precision': precision, 'class': clazz, 'direction': [0.0, 0.0, 0.0], 'size': 1.0}
