@@ -1,4 +1,4 @@
-import camera as camera_
+from camera import camera as camera_
 import numpy as np
 
 
@@ -24,10 +24,11 @@ def camera_test():
     print('---TEST---Camera---BEGIN---')
     direction = [1, 0, 0]
     position = [1, 1, 1]
-    R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     T = np.asmatrix([[10], [10], [10]])
     camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
     camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
+    # camera.update_extrinsic_parameters_by_camera_position_rotation([0, 0, 0], R)
     depth = 1
     pixel_coordinate = [1632 * 2, 1224]
     world_coordinate = camera.pixel_depth_to_world(pixel_coordinate, depth)
@@ -38,8 +39,44 @@ def camera_test():
     print(pixel_coordinate_back)
     pixel_coordinate_back = camera.world_to_pixel(world_coordinate)
     print(pixel_coordinate_back)
+
+    position, direction = camera.generate_camera_position_direction_from_R_T()
+    print(position, direction)
+    print(camera.generate_camera_position_rotation_from_R_T())
+    print(camera.R)
+    print(camera.T)
     print('---TEST---Camera---END---')
 
+    print(camera.pixel_to_world.original(camera, np.asmatrix([[10], [10], [10]])))
+
+def camera_test2():
+    print('---TEST---Camera---BEGIN---')
+    direction = [0, 0, 1]
+    position = [0, 0, 0]
+    R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    T = np.asmatrix([[10], [10], [10]])
+    camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
+    camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
+    # camera.update_extrinsic_parameters_by_camera_position_rotation([0, 0, 0], R)
+    depth = 1
+    pixel_coordinate = [1632, 1224]
+    world_coordinate = camera.pixel_depth_to_world(pixel_coordinate, depth)
+    print(world_coordinate)
+    world_coordinate2 = camera.pixel_to_world(pixel_coordinate)
+    print(world_coordinate2)
+    pixel_coordinate_back = camera.world_to_pixel(world_coordinate2)
+    print(pixel_coordinate_back)
+    pixel_coordinate_back = camera.world_to_pixel(world_coordinate)
+    print(pixel_coordinate_back)
+
+    position, direction = camera.generate_camera_position_direction_from_R_T()
+    print(position, direction)
+    print(camera.generate_camera_position_rotation_from_R_T())
+    print(camera.R)
+    print(camera.T)
+    print('---TEST---Camera---END---')
+
+    print(camera.pixel_to_world.original(camera, np.asmatrix([[10], [10], [10]])))
 
 # ground measure
 # obj: 0.19  dist: 0.235 foc: 0.035 pix: 2448 mx: 86500

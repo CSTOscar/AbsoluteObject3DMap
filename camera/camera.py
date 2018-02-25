@@ -3,10 +3,36 @@ import functools
 
 
 # WARNING: this is a right handed coordinate system
+#
+def position_direction_rotation_output_adapter(method):
+    @functools.wraps(method)
+    def adapted_method(*args, **kwargs):
+        results = method(*args, **kwargs)
+        results = results
+        for i in range(len(results)):
+            result = results[i]
+            if isinstance(result, tuple) or isinstance(result, list) or \
+                    isinstance(result, np.matrix) or isinstance(result, np.ndarray):
+                result = np.asarray(result).flatten()
+                # print(arg)
+                result_len = len(result)
+                if result_len == 3:
+                    result = result
+                elif result_len == 9:
+                    result = result.reshape((3, 3)).tolist()
+                else:
+                    print('FATAL: result_len != 3 or 9 in', method.__name__)
+
+                yield result
+
+    adapted_method.original = method
+    return adapted_method
+
 
 def position_direction_rotation_input_adapter(method):
     @functools.wraps(method)
     def adapted_method(*args, **kwargs):
+        # print('origin: ', args)
         args = list(args)
         for i in range(len(args)):
             arg = args[i]
@@ -23,9 +49,11 @@ def position_direction_rotation_input_adapter(method):
             #     print('FATAL: invalid input for ', method.__name__)
             args[i] = arg
 
-        # print(args)
+        # print('adapted: ', args)
 
         return method(*args, **kwargs)
+
+    adapted_method.original = method
 
     return adapted_method
 
@@ -49,6 +77,7 @@ def coordinates_input_output_adapter(method):
         # print(args)
 
         def return_adapted(*args, **kwargs):
+            # TODO: this just handles single output, expand later
             result = method(*args, **kwargs)
             if isinstance(result, np.ndarray) or isinstance(result, np.matrix):
                 # print(result)
@@ -62,12 +91,15 @@ def coordinates_input_output_adapter(method):
 
         return return_adapted(*args, **kwargs)
 
+    adapted_method.original = method
+
     return adapted_method
 
 
 class Camera:
     @staticmethod
     def camera_position_rotation_to_R_T(position, rotation):
+        # print('camera_position_rotation_to_R_T ', position, rotation)
         R = np.linalg.inv(rotation)
         T = -R @ position
         return R, T
@@ -84,7 +116,9 @@ class Camera:
 
     @staticmethod
     def generate_K_from_mx_my_f_u_v(mx, my, f, u, v):
-        return np.asmatrix([[f * mx, 0, u, 0], [0, f * my, v, 0], [0, 0, 1, 0]])
+        return np.asmatrix([[f * mx, 0, u, 0],
+                            [0, f * my, v, 0],
+                            [0, 0, 1, 0]])
 
     @staticmethod
     def generate_rotation_from_direction(D):
@@ -131,12 +165,20 @@ class Camera:
 
         self.cov = np.asmatrix([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
 
+    @position_direction_rotation_output_adapter
     def generate_camera_position_rotation_from_R_T(self):
         R_inv = np.linalg.inv(self.R)
         return -R_inv @ self.T, R_inv
 
+    @position_direction_rotation_output_adapter
+    def generate_camera_position_direction_from_R_T(self):
+        position, rotation = self.generate_camera_position_rotation_from_R_T()
+        direction = rotation @ np.asmatrix([[0.0], [0.0], [1.0]])
+        return position, direction
+
     @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_rotation(self, position, rotation):
+        # print('update_extrinsic_parameters_by_camera_position_rotation', position, rotation)
         self.R, self.T = Camera.camera_position_rotation_to_R_T(position, rotation)
         self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
         self.M = self.K @ self.RT
@@ -156,28 +198,31 @@ class Camera:
     @coordinates_input_output_adapter
     def pixel_to_world(self, pixel_coordinate):
         ans = self.M_pinv @ pixel_coordinate
+        if ans[-1] == 0:
+            # TODO: argue this is mathematically true, write the intuition in the report
+            ans[-1] = 1.0
         return ans
 
     @coordinates_input_output_adapter
     def pixel_depth_to_world(self, pixel_coordinate, depth):
-        # print('depth', depth)
-        # P position, O rotation matrix
-        P, O = self.generate_camera_position_rotation_from_R_T()
-        # print('camera position:', P)
-        # Z camera direction in world coordination
+        P, O = self.generate_camera_position_rotation_from_R_T.original(self)
         Z = O @ np.asmatrix([[0], [0], [1]])
-        # E4 = self.pixel_to_world(pixel_coordinate[:-1])
-        E3 = self.pixel_to_world(pixel_coordinate[:-1])
-        E3 = np.asarray(E3).reshape((3, 1))
-        E3 = np.asmatrix(E3)
-        # TODO: argue that if the E_4 is 0, the camera position must be at 0
-        # E3 = E4[0:3] / (E4[3][0] if E4[3][0] != 0 else 1.0)
-        # print('E3', E3)
-        # print('E4', E4)
+
+        # E3 = self.pixel_to_world(pixel_coordinate[:-1] / pixel_coordinate[-1])
+        # E3 = np.asarray(E3).reshape((3, 1))
+        # E3 = np.asmatrix(E3)
+
+        E4 = self.pixel_to_world.original(self, pixel_coordinate)
+        if E4[-1] == 0.0:
+            # TODO: argue that if the E_4 is 0, the camera position must be at 0
+            E3 = E4[:-1]
+        else:
+            E3 = E4[:-1] / E4[-1]
+
         D0 = (E3 - P)
         D0 = D0 / np.linalg.norm(D0)
         D = D0 * (-1 if (D0.T @ Z)[0][0] < 0 else 1)
-        # print('D: ', D)
+
         world_coordinate = P + depth * D
         world_coordinate = np.append(world_coordinate, [[1.0]], axis=0)
 
