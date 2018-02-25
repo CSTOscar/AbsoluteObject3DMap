@@ -4,6 +4,8 @@ import world_model.object_projection as world_object
 from camera import camera as camera_
 
 
+# TODO: debug, test and check for error message and logic
+
 def new_object_projection(frame_id, clazz, score, world_coordinate, scale):
     return {'frame_id': frame_id, 'class': clazz, 'score': score,
             'position': world_coordinate, 'scale': scale}
@@ -24,8 +26,10 @@ def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
     for i in range(1, len(frame_list) - 1):
         frame_list[i].set_prev_frame(frame_list[i - 1])
         frame_list[i].set_next_frame(frame_list[i + 1])
-    frame_list[0].set_prev_frame(frame_list[len(frame_list) - 1])
-    frame_list[0].set_next_frame(None)
+    frame_list[-1].set_prev_frame(frame_list[len(frame_list) - 1])
+    frame_list[-1].set_next_frame(None)
+
+    return frame_list
 
 
 class Frame:
@@ -65,7 +69,7 @@ class Frame:
         self.motion_info = None
 
         # sef of object projections which will be passed to world reconstruction
-        self.projections = new_object_projection()
+        self.projections = None
 
     def set_prev_frame(self, frame):
         if not self.prev_frame_set:
