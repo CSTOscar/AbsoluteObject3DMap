@@ -10,7 +10,7 @@ CKPT_FILE_NAME = 'frozen_inference_graph.pb'
 LABEL_FILE_NAME = 'mscoco_label_map.pbtxt'
 NUM_CLASSES = 90
 
-# od.detection(MODEL_NAME, CKPT_FILE_NAME, LABEL_FILE_NAME, NUM_CLASSES, 'image{}.jpg', 5)
+od.detection(MODEL_NAME, CKPT_FILE_NAME, LABEL_FILE_NAME, NUM_CLASSES, 'image{}.jpg', 8)
 
 data = np.load('/Users/zijunyan/Desktop/Oscar/ObsoluteObject3DMap/data/temp_files/results/image_detection_record.npy')
 
