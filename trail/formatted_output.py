@@ -33,17 +33,19 @@ DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 PATH_TO_CKPT = MODEL_NAME + '/frozen_inference_graph.pb'
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = os.path.join('data', 'mscoco_label_map.pbtxt')
+PATH_TO_LABELS = os.path.join('label_files', 'mscoco_label_map.pbtxt')
 
 NUM_CLASSES = 90
 
-opener = urllib.request.URLopener()
-opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-tar_file = tarfile.open(MODEL_FILE)
-for file in tar_file.getmembers():
-    file_name = os.path.basename(file.name)
-    if 'frozen_inference_graph.pb' in file_name:
-        tar_file.extract(file, os.getcwd())
+if not os.path.isfile(PATH_TO_CKPT):
+    if not os.path.isfile(MODEL_FILE):
+        opener = urllib.request.URLopener()
+        opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
+    tar_file = tarfile.open(MODEL_FILE)
+    for file in tar_file.getmembers():
+        file_name = os.path.basename(file.name)
+        if 'frozen_inference_graph.pb' in file_name:
+            tar_file.extract(file, os.getcwd())
 
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -71,7 +73,7 @@ def load_image_into_numpy_array(image):
 
 PATH_TO_TEST_IMAGES_DIR = 'test_images'
 PATH_TO_TEST_IMAGES_OUTPUT_DIR = 'test_images_output'
-TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 11)]
+TEST_IMAGE_PATHS = [os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 10)]
 PATH_TO_TEST_IMAGES_OUTPUT_DIR_SUB = os.path.join(PATH_TO_TEST_IMAGES_OUTPUT_DIR, PATH_TO_TEST_IMAGES_DIR)
 if not os.path.exists(PATH_TO_TEST_IMAGES_OUTPUT_DIR_SUB):
     os.makedirs(PATH_TO_TEST_IMAGES_OUTPUT_DIR_SUB)
@@ -83,7 +85,6 @@ import scipy.misc
 
 with detection_graph.as_default():
     with tf.Session(graph=detection_graph) as sess:
-        summary_writer = tf.summary.FileWriter('tensorboard', sess.graph)
         # Definite input and output Tensors for detection_graph
         image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
         # Each box represents a part of the image where a particular object was detected.
@@ -105,10 +106,10 @@ with detection_graph.as_default():
                 [detection_boxes, detection_scores, detection_classes, num_detections],
                 feed_dict={image_tensor: image_np_expanded})
 
-            # print('boxes', boxes)
-            # print('scores', scores)
-            # print('classes', classes)
-            # print('num', num)
+            print('boxes', boxes)
+            print('scores', scores)
+            print('classes', classes)
+            print('num', num)
             # Visualization of the results of a detection.
             vis_util.visualize_boxes_and_labels_on_image_array(
                 image_np,
@@ -121,4 +122,5 @@ with detection_graph.as_default():
             plt.figure(figsize=IMAGE_SIZE)
             plt.imshow(image_np)
             scipy.misc.imsave(os.path.join(PATH_TO_TEST_IMAGES_OUTPUT_DIR, image_path), image_np)
+            print("progress check: " + image_path)
         plt.show()
