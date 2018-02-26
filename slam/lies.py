@@ -45,8 +45,8 @@ def so3exp(xi):
     theta = np.linalg.norm(xi)
     if theta == 0:
         return iden3
-    B = xi[0] * s03_xsin + xi[1] * so3_ysin + xi[2] * so3_zsin
-    return (iden +
+    B = xi[0] * so3_xsin + xi[1] * so3_ysin + xi[2] * so3_zsin
+    return (iden3 +
             B * math.sin(theta) / theta + 
             (B @ B) * (1.0 - math.cos(theta)) / theta / theta)
 
