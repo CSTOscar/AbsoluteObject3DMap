@@ -1,10 +1,22 @@
 import numpy as np
 import functools
 import cv2
+from PIL import Image
 
 
 # WARNING: this is a right handed coordinate system
 #
+
+def generate_chessboard_picture(grid_pixel_length, file_path, width=8, height=9, black_white_swap=False):
+    left_corner_color = 255 if black_white_swap else 0
+    image = [[(left_corner_color if ((i // grid_pixel_length) - (j // grid_pixel_length)) % 2 == 0
+               else 255 - left_corner_color) for j in range(width * grid_pixel_length)]
+             for i in range(height * grid_pixel_length)]
+    image = np.asarray(image, dtype=np.int8).T
+    image = Image.fromarray(image, 'L')
+    image.save(file_path)
+
+
 def position_direction_rotation_output_adapter(method):
     @functools.wraps(method)
     def adapted_method(*args, **kwargs):
@@ -147,8 +159,6 @@ class Camera:
                 return True
         print('Warning: The camera calibration failed, camera parameter is not updated')
         return False
-
-
 
     @staticmethod
     def camera_position_rotation_to_R_T(position, rotation):
