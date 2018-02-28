@@ -1,5 +1,6 @@
 import numpy as np
 import functools
+import cv2
 
 
 # WARNING: this is a right handed coordinate system
@@ -22,7 +23,6 @@ def position_direction_rotation_output_adapter(method):
                     result = result.reshape((3, 3)).tolist()
                 else:
                     print('FATAL: result_len != 3 or 9 in', method.__name__)
-
                 yield result
 
     adapted_method.original = method
@@ -97,6 +97,48 @@ def coordinates_input_output_adapter(method):
 
 
 class Camera:
+    DEFAULT_CORNER_SUB_PIX_CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    def calibrate_by_images_and_grid_length(self, image, length, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
+
+        image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        ret, corners = cv2.findChessboardCorners(image_gray, (7, 6), None)
+
+        if ret:
+            image_points = cv2.cornerSubPix(image_gray, corners, (11, 11), (-1, -1), criteria)
+            image_points = [image_points]
+            object_points = np.zeros((6 * 7, 3), np.float32)
+            object_points[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
+            object_points *= length
+            object_points = [object_points]
+
+            ret, intrinsic_matrix, distortion, rotation_vectors, transformation_vectors = cv2.calibrateCamera(
+                object_points, image_points, image_gray.shape[::-1],
+                None, None)
+
+            print(image_points)
+            print(object_points)
+            print(intrinsic_matrix)
+            print(rotation_vectors)
+            print(transformation_vectors)
+
+            rotation_matrix, jacobian = cv2.Rodrigues(rotation_vectors[0])
+            rotation_matrix = np.asmatrix(rotation_matrix)
+            transformation_vector = transformation_vectors[0]
+            transformation_vector = np.asmatrix(transformation_vector.reshape((3, 1)))
+            intrinsic_matrix = np.append(intrinsic_matrix, [[0], [0], [0]], axis=1)
+
+            if ret:
+                self.K = intrinsic_matrix
+                self.R = rotation_matrix
+                self.T = transformation_vector
+                print(self.K)
+                print(self.R)
+                print(self.T)
+                self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
+                self.M = self.K @ self.RT
+                self.M_pinv = np.linalg.pinv(self.M)
+
     @staticmethod
     def camera_position_rotation_to_R_T(position, rotation):
         # print('camera_position_rotation_to_R_T ', position, rotation)
@@ -215,6 +257,7 @@ class Camera:
         E4 = self.pixel_to_world.original(self, pixel_coordinate)
         if E4[-1] == 0.0:
             # TODO: argue that if the E_4 is 0, the camera position must be at 0
+            # this is handled in pixel_to_world
             E3 = E4[:-1]
         else:
             E3 = E4[:-1] / E4[-1]
@@ -228,5 +271,6 @@ class Camera:
 
         return world_coordinate
 
+    @DeprecationWarning
     def get_cov_by_depth(self, depth):
         return depth * self.cov
