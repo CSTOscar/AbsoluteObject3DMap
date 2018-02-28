@@ -29,6 +29,14 @@ def position_direction_rotation_output_adapter(method):
     return adapted_method
 
 
+def rotation_vector_to_rotation_matrix(rotation_vector):
+    print('test in: rotation_vector_to_rotation_matrix')
+    rotation_matrix, jacobian = cv2.Rodrigues(rotation_vector)
+    rotation_matrix = np.asmatrix(rotation_matrix)
+    print(rotation_matrix)
+    return rotation_matrix
+
+
 def position_direction_rotation_input_adapter(method):
     @functools.wraps(method)
     def adapted_method(*args, **kwargs):
@@ -122,8 +130,7 @@ class Camera:
             print(rotation_vectors)
             print(transformation_vectors)
 
-            rotation_matrix, jacobian = cv2.Rodrigues(rotation_vectors[0])
-            rotation_matrix = np.asmatrix(rotation_matrix)
+            rotation_matrix = rotation_vector_to_rotation_matrix(rotation_vectors[0])
             transformation_vector = transformation_vectors[0]
             transformation_vector = np.asmatrix(transformation_vector.reshape((3, 1)))
             intrinsic_matrix = np.append(intrinsic_matrix, [[0], [0], [0]], axis=1)
@@ -155,6 +162,12 @@ class Camera:
     def generate_RT_from_R_T(R, T):
         RconT = np.concatenate((R, T), axis=1)
         return np.concatenate((RconT, np.asmatrix([0, 0, 0, 1])), axis=0)
+
+    @staticmethod
+    def generate_R_T_from_RT(RT):
+        R = RT[0:3, 0:3]
+        T = RT[0:3, 3:4]
+        return R, T
 
     @staticmethod
     def generate_K_from_mx_my_f_u_v(mx, my, f, u, v):
@@ -212,6 +225,8 @@ class Camera:
         R_inv = np.linalg.inv(self.R)
         return -R_inv @ self.T, R_inv
 
+    # the returning value of this function is correct but not deterministic. (SO(2))
+    @DeprecationWarning
     @position_direction_rotation_output_adapter
     def generate_camera_position_direction_from_R_T(self):
         position, rotation = self.generate_camera_position_rotation_from_R_T()
@@ -226,10 +241,26 @@ class Camera:
         self.M = self.K @ self.RT
         self.M_pinv = np.linalg.pinv(self.M)
 
+    # the result of this function is semantically correct but not deterministic. (SO(2))
+    @DeprecationWarning
     @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_direction(self, position, direction):
         rotation = Camera.generate_rotation_from_direction(direction)
         self.update_extrinsic_parameters_by_camera_position_rotation(position, rotation)
+
+    # TODO: check this is fitting the semantics of incoming value
+    def update_extrinsic_parameters_by_world_camera_transformation(self, rotation_vector, transformation_vector):
+        # print('test in: update_extrinsic_parameters_by_world_camera_transformation')
+        if rotation_vector.shape == (3, 3):
+            rotation_matrix = rotation_vector
+        else:
+            rotation_matrix = rotation_vector_to_rotation_matrix(rotation_vector)
+        transformation_vector = np.asmatrix(transformation_vector.reshape((3, 1)))
+        RT_transformation = Camera.generate_RT_from_R_T(rotation_matrix, transformation_vector)
+
+        # TODO: check this is mathematically correct
+        self.RT = RT_transformation @ self.RT
+        self.R, self.T = Camera.generate_R_T_from_RT(self.RT)
 
     @coordinates_input_output_adapter
     def world_to_pixel(self, world_coordinate):
