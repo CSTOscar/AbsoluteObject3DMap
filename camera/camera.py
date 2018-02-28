@@ -30,10 +30,9 @@ def position_direction_rotation_output_adapter(method):
 
 
 def rotation_vector_to_rotation_matrix(rotation_vector):
-    print('test in: rotation_vector_to_rotation_matrix')
+    # print('test in: rotation_vector_to_rotation_matrix')
     rotation_matrix, jacobian = cv2.Rodrigues(rotation_vector)
     rotation_matrix = np.asmatrix(rotation_matrix)
-    print(rotation_matrix)
     return rotation_matrix
 
 
@@ -124,11 +123,11 @@ class Camera:
                 object_points, image_points, image_gray.shape[::-1],
                 None, None)
 
-            print(image_points)
-            print(object_points)
-            print(intrinsic_matrix)
-            print(rotation_vectors)
-            print(transformation_vectors)
+            # print(image_points)
+            # print(object_points)
+            # print(intrinsic_matrix)
+            # print(rotation_vectors)
+            # print(transformation_vectors)
 
             rotation_matrix = rotation_vector_to_rotation_matrix(rotation_vectors[0])
             transformation_vector = transformation_vectors[0]
@@ -139,12 +138,17 @@ class Camera:
                 self.K = intrinsic_matrix
                 self.R = rotation_matrix
                 self.T = transformation_vector
-                print(self.K)
-                print(self.R)
-                print(self.T)
+                # print(self.K)
+                # print(self.R)
+                # print(self.T)
                 self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
                 self.M = self.K @ self.RT
                 self.M_pinv = np.linalg.pinv(self.M)
+                return True
+        print('Warning: The camera calibration failed, camera parameter is not updated')
+        return False
+
+
 
     @staticmethod
     def camera_position_rotation_to_R_T(position, rotation):
@@ -196,11 +200,11 @@ class Camera:
 
     def __init__(self, mx, my, f, u, v, R, T):
         # Intrinsic parameters
-        self.mx = mx
-        self.my = my
-        self.f = f
-        self.u = u
-        self.v = v
+        # self.mx = mx
+        # self.my = my
+        # self.f = f
+        # self.u = u
+        # self.v = v
 
         # Extrinsic parameters
         # R^-1 is the rotation matrix for how camera is rotated
@@ -212,11 +216,10 @@ class Camera:
         self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
 
         # Matrix for perspective projection
-        self.K = Camera.generate_K_from_mx_my_f_u_v(self.mx, self.my, self.f, self.u, self.v)
+        self.K = Camera.generate_K_from_mx_my_f_u_v(mx, my, f, u, v)
 
         # Matrix and its inverse for transformation + perspective projection
-        self.M = self.K @ self.RT
-        self.M_pinv = np.linalg.pinv(self.M)
+        self.update_M_M_pinv_by_K_RT()
 
         self.cov = np.asmatrix([[0.01, 0, 0], [0, 0.01, 0], [0, 0, 0.01]])
 
@@ -233,13 +236,16 @@ class Camera:
         direction = rotation @ np.asmatrix([[0.0], [0.0], [1.0]])
         return position, direction
 
+    def update_M_M_pinv_by_K_RT(self):
+        self.M = self.K @ self.RT
+        self.M_pinv = np.linalg.pinv(self.M)
+
     @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_rotation(self, position, rotation):
         # print('update_extrinsic_parameters_by_camera_position_rotation', position, rotation)
         self.R, self.T = Camera.camera_position_rotation_to_R_T(position, rotation)
         self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
-        self.M = self.K @ self.RT
-        self.M_pinv = np.linalg.pinv(self.M)
+        self.update_M_M_pinv_by_K_RT()
 
     # the result of this function is semantically correct but not deterministic. (SO(2))
     @DeprecationWarning
@@ -261,6 +267,7 @@ class Camera:
         # TODO: check this is mathematically correct
         self.RT = RT_transformation @ self.RT
         self.R, self.T = Camera.generate_R_T_from_RT(self.RT)
+        self.update_M_M_pinv_by_K_RT()
 
     @coordinates_input_output_adapter
     def world_to_pixel(self, world_coordinate):
