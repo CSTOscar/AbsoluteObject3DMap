@@ -1,5 +1,7 @@
 from camera import camera as camera_
 import numpy as np
+import PIL.Image as Image
+import cv2
 
 
 def generate_R_inv_from_direction_test(D):
@@ -49,6 +51,7 @@ def camera_test():
 
     print(camera.pixel_to_world.original(camera, np.asmatrix([[10], [10], [10]])))
 
+
 def camera_test2():
     print('---TEST---Camera---BEGIN---')
     direction = [0, 0, 1]
@@ -71,12 +74,12 @@ def camera_test2():
 
     position, direction = camera.generate_camera_position_direction_from_R_T()
     print(position, direction)
-    print(camera.generate_camera_position_rotation_from_R_T())
     print(camera.R)
     print(camera.T)
     print('---TEST---Camera---END---')
 
     print(camera.pixel_to_world.original(camera, np.asmatrix([[10], [10], [10]])))
+
 
 # ground measure
 # obj: 0.19  dist: 0.235 foc: 0.035 pix: 2448 mx: 86500
@@ -114,4 +117,20 @@ def camera_test2():
 #
 # print(camera1.generate_camera_position_orientation_from_R_T()[1])
 
-camera_test()
+def camera_calibration_test():
+    print('---TEST---CameraCalibration---BEGIN---')
+    R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    T = np.asmatrix([[10], [10], [10]])
+    camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
+    image = cv2.imread('calibration_test_image.JPG')
+    print(type(image))
+    camera.calibrate_by_images_and_grid_length(image, 0.0245)
+
+    pix_coordinate = [1118.16320801, 688.82000732]
+    world_coordinate = camera.pixel_depth_to_world(pix_coordinate, 100)
+    print(world_coordinate)
+
+    print('---TEST---CameraCalibration---END---')
+
+
+camera_calibration_test()
