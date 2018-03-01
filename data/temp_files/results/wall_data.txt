@@ -1,0 +1,1 @@
+[{"position1": [-5, -5], "position2": [5, -5], "height": 4}, {"position1": [-5, -5], "position2": [-5, 5], "height": 4}, {"position1": [5, 5], "position2": [5, -5], "height": 4}, {"position1": [5, 5], "position2": [-5, 5], "height": 4}]
