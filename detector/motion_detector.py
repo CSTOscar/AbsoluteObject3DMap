@@ -25,15 +25,15 @@ def detect_motion(frame):
 
     # Find matches between the two images by the means of some dark magic
     flann = cv.FlannBasedMatcher(index_params_sift, search_params)
-    matches01 = flann.knnMatch(prevframe.des_right, prevframe.des_left, k=2)
-    matches02 = flann.knnMatch(frame.des_left, prevframe.des_left, k=2)
+    matches01 = flann.knnMatch(frame.des_right, frame.des_left, k=2)
+    matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
 
     pts2 = []
     pts1 = []
     pts0 = []
-    kp2 = frame.kp_left
-    kp1 = prevframe.kp_right
-    kp0 = prevframe.kp_left
+    kp2 = prevframe.kp_left
+    kp1 = frame.kp_right
+    kp0 = frame.kp_left
 
     good01 = {}
 
