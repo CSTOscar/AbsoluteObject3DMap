@@ -29,7 +29,7 @@ def camera_test():
     R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     T = np.asmatrix([[10], [10], [10]])
     camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
-    camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
+    # camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
     # camera.update_extrinsic_parameters_by_camera_position_rotation([0, 0, 0], R)
     depth = 1
     pixel_coordinate = [1632 * 2, 1224]
@@ -42,7 +42,7 @@ def camera_test():
     pixel_coordinate_back = camera.world_to_pixel(world_coordinate)
     print(pixel_coordinate_back)
 
-    position, direction = camera.generate_camera_position_direction_from_R_T()
+    #    position, direction = camera.generate_camera_position_direction_from_R_T()
     print(position, direction)
     print(camera.generate_camera_position_rotation_from_R_T())
     print(camera.R)
@@ -59,7 +59,7 @@ def camera_test2():
     R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     T = np.asmatrix([[10], [10], [10]])
     camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
-    camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
+    # camera.update_extrinsic_parameters_by_camera_position_direction(position, direction)
     # camera.update_extrinsic_parameters_by_camera_position_rotation([0, 0, 0], R)
     depth = 1
     pixel_coordinate = [1632, 1224]
@@ -72,7 +72,7 @@ def camera_test2():
     pixel_coordinate_back = camera.world_to_pixel(world_coordinate)
     print(pixel_coordinate_back)
 
-    position, direction = camera.generate_camera_position_direction_from_R_T()
+    # position, direction = camera.generate_camera_position_direction_from_R_T()
     print(position, direction)
     print(camera.R)
     print(camera.T)
@@ -122,15 +122,47 @@ def camera_calibration_test():
     R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
     T = np.asmatrix([[10], [10], [10]])
     camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
-    image = cv2.imread('calibration_test_image.JPG')
+    image = cv2.imread('/Users/zijunyan/Downloads/IMG_6110.JPG')
+
     print(type(image))
-    camera.calibrate_by_images_and_grid_length(image, 0.0245)
+    image.tolist()
+    camera.calibrate_by_images_and_grid_length(image, 0.023125)
+    print('this is K', camera.K)
 
     pix_coordinate = [1118.16320801, 688.82000732]
     world_coordinate = camera.pixel_depth_to_world(pix_coordinate, 100)
     print(world_coordinate)
 
+    print('test for generate_R_T_from_RT:')
+    print(camera.RT)
+    print(camera.R, camera.T)
+    print(camera.generate_R_T_from_RT(camera.RT))
+    print(type(camera.generate_R_T_from_RT(camera.RT)[0]))
+    print(type(camera.generate_R_T_from_RT(camera.RT)[1]))
+
+    camera.update_extrinsic_parameters_by_world_camera_transformation(camera.R, camera.T)
+    print(camera.RT)
+    camera.update_extrinsic_parameters_by_world_camera_transformation(camera.R, camera.T)
+    print(camera.RT)
+    camera.update_extrinsic_parameters_by_world_camera_transformation(camera.R, camera.T)
+    print(camera.RT)
+    camera.update_extrinsic_parameters_by_world_camera_transformation(camera.R, camera.T)
+    print(camera.RT)
+
     print('---TEST---CameraCalibration---END---')
 
 
+def generate_chessboard_picture_test():
+    print('---TEST---generate_chessboard_picture---BEGIN---')
+    camera_.generate_chessboard_picture(100,
+                                        '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/chess_board_image/chessboard_image.jpg')
+
+    print('---TEST---generate_chessboard_picture---END---')
+
+
+# camera_test()
+# camera_test2()
+
+
 camera_calibration_test()
+# generate_chessboard_picture_test()
