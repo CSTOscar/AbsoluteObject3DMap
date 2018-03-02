@@ -2,9 +2,9 @@ from frame import frame as frame_
 from camera import camera as camera_
 from video_process import video_process
 
-VIDEO_PATH_L = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_files/test_left.mp4'
-VIDEO_PATH_R = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_files/test_right.mp4'
-FRAME_DIR_PATH = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/image_files'
+VIDEO_PATH_L = '../../data/video_files/test_left.mp4'
+VIDEO_PATH_R = '../../data/video_files/test_right.mp4'
+FRAME_DIR_PATH = '../../data/image_files'
 STEP = 10
 
 imagesL = video_process.capture_frames_from_video(VIDEO_PATH_L, STEP)
