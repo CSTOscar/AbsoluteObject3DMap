@@ -33,12 +33,15 @@ camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
 # avrK = K_sum / num
 # print(avrK)
 
-camera.K = [[1.12265949e+03, 0.00000000e+00, 3.07322388e+02, 0.00000000e+00],
-            [0.00000000e+00, 1.11948374e+03, 5.50850887e+02, 0.00000000e+00],
-            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00]]
+camera.K = np.asmatrix([[1.12265949e+03, 0.00000000e+00, 3.07322388e+02, 0.00000000e+00],
+                        [0.00000000e+00, 1.11948374e+03, 5.50850887e+02, 0.00000000e+00],
+                        [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00]])
+
 camera.update_M_M_pinv_by_K_RT()
 
 print(camera.K)
+print(type(camera.K))
+print(camera.M)
 
 frames = frame_.generate_raw_frame_chain_from_images(imagesL, imagesR, camera)
 
@@ -46,6 +49,9 @@ for i in range(0, len(frames)):
     frame = frames[i]
     frame.generate_set_kp_des()
 
+print('generate kp and des done')
+
 for i in range(1, len(frames)):
+    print('progress check for motion; ', i)
     frame = frames[i]
     frame.generate_set_motion_info()
