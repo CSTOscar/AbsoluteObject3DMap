@@ -61,6 +61,13 @@ class Frame:
         self.next_frame = None
         self.prev_frame = None
 
+        # for depth and motion detection
+
+        self.kp_left = None
+        self.des_left = None
+        self.kp.right = None
+        self.des_right = None
+
         # property of the frame: detection, depth
         self.detection_info = None
         self.depth_info = None
@@ -103,6 +110,7 @@ class Frame:
         else:
             print('Warning: generate_set depth_info more than once')
 
+    # TODO: fit this to the slam implementation
     def generate_set_motion_info(self, detector):
         if self.prev_frame_set:
             if not self.motion_info_generated:
@@ -114,10 +122,12 @@ class Frame:
         else:
             print('FATAL: prev_frame is not set (the first frame should also be set to None)')
 
+    # TODO: fit this to the slam implementation
     def generate_update_camera_extrinsic_parameters_based_on_prev_frame(self):
         if self.prev_frame_set and self.motion_info_generated:
             if not self.camera_extrinsic_set:
                 if self.prev_frame.camera_extrinsic_set:
+
                     prev_camera = self.prev_frame.camera
                     prev_camera_position, prev_camera_direction = \
                         prev_camera.generate_camera_position_direction_from_R_T()
@@ -150,7 +160,7 @@ class Frame:
                 box = detection['box']
                 pixel_box = [int(box[i] * (x_num_pix if i % 2 == 0 else y_num_pix)) for i in range(4)]
 
-                center = np.asmatrix([[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]])
+                center = [[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]]
                 # TODO: depth_mean is problematic, find a better metric later!
                 depth_map_slice = depth_map[pixel_box[0]:pixel_box[2], pixel_box[1]:pixel_box[3]]
                 depth = np.mean(depth_map_slice)
