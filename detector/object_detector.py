@@ -36,7 +36,8 @@ class ObjectorDetector:
                 (boxes, scores, classes, num) = sess.run(
                     [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
                     feed_dict={self.image_tensor: image})
-            return ObjectorDetector.create_image_detection_record(boxes[0], scores[0], classes[0], num[0])
+            return ObjectorDetector.create_image_detection_record(boxes[0], scores[0], classes[0], num[0]), \
+                   (boxes, scores, classes, num)
 
     @staticmethod
     def create_image_detection_record(boxes, scores, classes, num):

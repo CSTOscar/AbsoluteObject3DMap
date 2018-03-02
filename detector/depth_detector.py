@@ -2,12 +2,14 @@ import cv2
 import numpy as np
 
 
+def detect_depth(self, frame):
+
+
 class DepthDetector:
     def __init__(self):
         return
 
     def detect_depth(self, imageL, imageR):
-
         # disparity settings
         window_size = 5
         min_disp = 1
