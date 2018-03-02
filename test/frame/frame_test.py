@@ -30,8 +30,10 @@ for image_cal in images_cal:
         K_sum = camera.K if num == 1 else K_sum + camera.K
 
 print('avr K')
-K =
-print(K_sum / num)
+avrK = K_sum / num
+print(avrK)
+camera.K = avrK
+camera.update_M_M_pinv_by_K_RT()
 
 print(camera.K)
 
