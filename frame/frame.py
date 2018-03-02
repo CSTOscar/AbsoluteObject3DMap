@@ -23,12 +23,16 @@ def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
         frame_list.append(frame)
 
     frame_list[0].set_prev_frame(None)
-    frame_list[0].set_next_frame(frame_list[1])
-    for i in range(1, len(frame_list) - 1):
-        frame_list[i].set_prev_frame(frame_list[i - 1])
-        frame_list[i].set_next_frame(frame_list[i + 1])
-    frame_list[-1].set_prev_frame(frame_list[len(frame_list) - 1])
-    frame_list[-1].set_next_frame(None)
+    frame_list[0].set_next_frame(None)
+    # if there is more set one frame
+    if len(frame_list) > 1:
+
+        frame_list[0].set_next_frame(frame_list[1])
+        for i in range(1, len(frame_list) - 1):
+            frame_list[i].set_prev_frame(frame_list[i - 1])
+            frame_list[i].set_next_frame(frame_list[i + 1])
+        frame_list[-1].set_prev_frame(frame_list[len(frame_list) - 1])
+        frame_list[-1].set_next_frame(None)
 
     return frame_list
 
