@@ -150,7 +150,7 @@ class Camera:
                 self.K = intrinsic_matrix
                 self.R = rotation_matrix
                 self.T = transformation_vector
-                # print(self.K)
+                print('this is K', self.K)
                 # print(self.R)
                 # print(self.T)
                 self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
@@ -239,7 +239,6 @@ class Camera:
         return -R_inv @ self.T, R_inv
 
     # the returning value of this function is correct but not deterministic. (SO(2))
-    @DeprecationWarning
     @position_direction_rotation_output_adapter
     def generate_camera_position_direction_from_R_T(self):
         position, rotation = self.generate_camera_position_rotation_from_R_T()
@@ -249,6 +248,10 @@ class Camera:
     def update_M_M_pinv_by_K_RT(self):
         self.M = self.K @ self.RT
         self.M_pinv = np.linalg.pinv(self.M)
+
+    def update_RT(self, RT):
+        self.RT = RT
+        self.update_M_M_pinv_by_K_RT()
 
     @position_direction_rotation_input_adapter
     def update_extrinsic_parameters_by_camera_position_rotation(self, position, rotation):
@@ -265,7 +268,7 @@ class Camera:
         self.update_extrinsic_parameters_by_camera_position_rotation(position, rotation)
 
     # TODO: check this is fitting the semantics of incoming value
-    def update_extrinsic_parameters_by_world_camera_transformation(self, rotation_vector, transformation_vector):
+    def update_extrinsic_parameters_by_world_camera_transformation(self, transformation_vector, rotation_vector):
         # print('test in: update_extrinsic_parameters_by_world_camera_transformation')
         if rotation_vector.shape == (3, 3):
             rotation_matrix = rotation_vector
