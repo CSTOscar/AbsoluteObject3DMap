@@ -3,6 +3,7 @@ import cv2 as cv
 import math
 import scipy.optimize
 
+
 def detect_motion(frame):
     prevframe = frame.prev_frame
 
@@ -14,7 +15,7 @@ def detect_motion(frame):
     index_params_sift = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
 
     # For ORB descriptors
-    #FLANN_INDEX_LSH = 6
+    # FLANN_INDEX_LSH = 6
     # index_params_orb = dict(algorithm = FLANN_INDEX_LSH,
     #                   table_number = 6, # 12
     #                   key_size = 12,     # 20
@@ -53,6 +54,8 @@ def detect_motion(frame):
 
     B = 0.09
     K = frame.camera.K
+    K = K[0:3, 0:3]
+    print(K)
     L = np.linalg.inv(K)
 
     pts0 = np.int32(pts0)
@@ -107,13 +110,3 @@ def detect_motion(frame):
     xi = scipy.optimize.fmin(lambda xi: slamResidualMatches(p, xi, K, ref), xi0)
 
     return xi
-
-
-
-
-
-
-
-
-
-

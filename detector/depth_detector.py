@@ -3,6 +3,7 @@ import numpy as np
 
 
 def detect_depth(self, frame):
+    return
 
 
 class DepthDetector:
