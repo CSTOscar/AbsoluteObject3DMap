@@ -9,7 +9,7 @@ VIDEO_PATH_C = '/Users/zijunyan/Downloads/video_cal.mp4'
 FRAME_DIR_PATH = '../../data/image_files'
 STEP = 10
 
-images_cal = video_process.capture_frames_from_video(VIDEO_PATH_C, 5)
+# images_cal = video_process.capture_frames_from_video(VIDEO_PATH_C, 5)
 
 imagesL = video_process.capture_frames_from_video(VIDEO_PATH_L, STEP)
 imagesR = video_process.capture_frames_from_video(VIDEO_PATH_R, STEP)
@@ -18,21 +18,24 @@ R = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
 T = [[10], [10], [10]]
 camera = camera_.Camera(86500, 86500, 0.035, 3264 / 2, 2448 / 2, R, T)
 
-K_sum = None
+# K_sum = None
+#
+# num = 0
+#
+# for image_cal in images_cal:
+#     updated = camera.calibrate_by_images_and_grid_length(image_cal, 0.024)
+#     if updated:
+#         num += 1
+#         print(camera.K)
+#         K_sum = camera.K if num == 1 else K_sum + camera.K
+#
+# print('avr K')
+# avrK = K_sum / num
+# print(avrK)
 
-num = 0
-
-for image_cal in images_cal:
-    updated = camera.calibrate_by_images_and_grid_length(image_cal, 0.024)
-    if updated:
-        num += 1
-        print(camera.K)
-        K_sum = camera.K if num == 1 else K_sum + camera.K
-
-print('avr K')
-avrK = K_sum / num
-print(avrK)
-camera.K = avrK
+camera.K = [[1.12265949e+03, 0.00000000e+00, 3.07322388e+02, 0.00000000e+00],
+            [0.00000000e+00, 1.11948374e+03, 5.50850887e+02, 0.00000000e+00],
+            [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00]]
 camera.update_M_M_pinv_by_K_RT()
 
 print(camera.K)
