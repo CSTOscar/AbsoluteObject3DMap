@@ -3,6 +3,7 @@ import copy
 from detector.motion_detector import detect_motion
 from detector.depth_detector import detect_depth
 from detector.keypt_des_detector import detect_keypt_des
+from detector.motion_detector import MotionDetectionFailed
 
 
 # TODO: debug, test and check for error message and logic
@@ -23,7 +24,6 @@ def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
         frame_list.append(frame)
 
     frame_list[0].set_prev_frame(None)
-    frame_list[0].set_next_frame(None)
     # if there is more set one frame
     if len(frame_list) > 1:
 
@@ -128,8 +128,14 @@ class Frame:
     def generate_set_motion_info(self):
         if self.prev_frame_set and self.prev_frame.kp_des_set:
             if not self.motion_info_generated:
-                self.motion_info = detect_motion(self)
-                self.motion_info_generated = True
+                try:
+                    self.motion_info = detect_motion(self)
+                    self.motion_info_generated = True
+                except MotionDetectionFailed as motion_detection_fail:
+                    print('FATAL: ', motion_detection_fail.args)
+                    self.motion_info = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+                    self.motion_info_generated = True
+
             else:
                 print('Warning: generate_set depth_info more than once')
         else:
