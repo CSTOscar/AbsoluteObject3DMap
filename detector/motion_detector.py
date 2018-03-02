@@ -3,6 +3,8 @@ import cv2 as cv
 import math
 import scipy.optimize
 
+class MotionDetectionFailed(Exception):
+    pass
 
 def detect_motion(frame):
     prevframe = frame.prev_frame
@@ -53,14 +55,18 @@ def detect_motion(frame):
                 pts2.append(kp2[m.queryIdx].pt)
 
     B = 0.09
-    K = np.array(frame.camera.K[:3, :3])
+    K = np.array(frame.camera.K)[:3, :3]
     L = np.linalg.inv(K)
 
     pts0 = np.int32(pts0)
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    print(pts0.shape)
+    print()
+    k = pts0.shape[0]
+    print(k)
+    if k < 15:
+        raise MotionDetectionFailed("Not enough matches")
     # we should already know this matrix? Wierdly, we get something different than last time.
     F01, mask = cv.findFundamentalMat(pts1, pts0, cv.FM_LMEDS)
 
@@ -68,18 +74,27 @@ def detect_motion(frame):
     pts0 = pts0[mask.ravel() == 1]
     pts1 = pts1[mask.ravel() == 1]
     pts2 = pts2[mask.ravel() == 1]
+    k = pts0.shape[0]
+    print(k)
+    if k < 15:
+        raise MotionDetectionFailed("Not enough matches")
 
     F02, mask = cv.findFundamentalMat(pts2, pts0, cv.FM_LMEDS)
     pts0 = pts0[mask.ravel() == 1]
     pts1 = pts1[mask.ravel() == 1]
     pts2 = pts2[mask.ravel() == 1]
 
+    k = pts0.shape[0]
+    print(k)
+    if k < 15:
+        raise MotionDetectionFailed("Not enough matches")
+
     def slamResidualMatches(p, xi, K1, ref):
         # p = input world points
         # xi = movement of camera
         # K1 = camera matrix of second camera
         # ref = reference points on second camera in screen points
-        R,_ = cv.Rodrigues(xi[3:])
+        R, _ = cv.Rodrigues(xi[3:])
         pj = K1 @ (R @ p + xi[:3, np.newaxis])
         if not (pj[2, :] > 0).all():
             return math.inf
@@ -96,7 +111,7 @@ def detect_motion(frame):
     pts1hom = np.array([pts1[:, 0], pts1[:, 1], np.ones((k))])
 
     # disparity and depth
-    disp = ((L @ pts0hom) - (L @ pts1hom))[0,:]
+    disp = ((L @ pts0hom) - (L @ pts1hom))[0, :]
     depth = B / disp
 
     # world points
