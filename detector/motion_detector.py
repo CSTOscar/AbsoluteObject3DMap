@@ -23,8 +23,8 @@ def detect_motion(frame):
 
     # Find matches between the two images by the means of some dark magic
     flann = cv.FlannBasedMatcher(index_params_sift, search_params)
-    matches01 = flann.knnMatch(prevframe.des_left, prevframe.des_right, k=2)
-    matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
+    matches01 = flann.knnMatch(prevframe.des_right, prevframe.des_left, k=2)
+    matches02 = flann.knnMatch(frame.des_left, prevframe.des_left, k=2)
 
     pts2 = []
     pts1 = []
@@ -36,12 +36,12 @@ def detect_motion(frame):
     good01 = {}
 
     # ratio test as per Lowe's paper
-    lowe = 0.6
+    lowe = 0.9
     for i, (m, n) in enumerate(matches01):
         if m.distance < lowe * n.distance:
-            p1 = kp1[m.trainIdx].pt
-            p0 = kp0[m.queryIdx].pt
-            if (abs(p0[0] - p1[0]) >= abs(p0[1] - p1[1])) and p0[0] - p1[0] >= 10:
+            p1 = kp1[m.queryIdx].pt
+            p0 = kp0[m.trainIdx].pt
+            if p0[0] - p1[0] >= 10:
                 good01[m.trainIdx] = m
 
     # Finding matches between all three images.
@@ -53,15 +53,14 @@ def detect_motion(frame):
                 pts2.append(kp2[m.queryIdx].pt)
 
     B = 0.09
-    K = frame.camera.K
-    K = K[0:3, 0:3]
-    print(K)
+    K = np.array(frame.camera.K[:3, :3])
     L = np.linalg.inv(K)
 
     pts0 = np.int32(pts0)
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
+    print(pts0.shape)
     # we should already know this matrix? Wierdly, we get something different than last time.
     F01, mask = cv.findFundamentalMat(pts1, pts0, cv.FM_LMEDS)
 
@@ -80,8 +79,8 @@ def detect_motion(frame):
         # xi = movement of camera
         # K1 = camera matrix of second camera
         # ref = reference points on second camera in screen points
-        xim = cv.Rodrigues(xi[3:])
-        pj = K1 @ (xim @ p + xi[:3, np.newaxis])
+        R,_ = cv.Rodrigues(xi[3:])
+        pj = K1 @ (R @ p + xi[:3, np.newaxis])
         if not (pj[2, :] > 0).all():
             return math.inf
 
@@ -97,7 +96,7 @@ def detect_motion(frame):
     pts1hom = np.array([pts1[:, 0], pts1[:, 1], np.ones((k))])
 
     # disparity and depth
-    disp = np.linalg.norm((L @ pts1hom) - (L @ pts0hom), axis=0)
+    disp = ((L @ pts0hom) - (L @ pts1hom))[0,:]
     depth = B / disp
 
     # world points

@@ -3,10 +3,10 @@ from camera import camera as camera_
 from video_process import video_process
 import numpy as np
 
-VIDEO_PATH_L = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_files/test_left.mp4'
-VIDEO_PATH_R = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_files/test_right.mp4'
+VIDEO_PATH_L = '../../data/video_files/test_left.mp4'
+VIDEO_PATH_R = '../../data/video_files/test_right.mp4'
 VIDEO_PATH_C = '/Users/zijunyan/Downloads/video_cal.mp4'
-FRAME_DIR_PATH = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/image_files'
+FRAME_DIR_PATH = '../../data/image_files'
 STEP = 10
 
 images_cal = video_process.capture_frames_from_video(VIDEO_PATH_C, 5)
