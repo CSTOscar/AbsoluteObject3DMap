@@ -30,7 +30,7 @@ def position_direction_rotation_output_adapter(method):
                 # print(arg)
                 result_len = len(result)
                 if result_len == 3:
-                    result = result
+                    result = result.tolist()
                 elif result_len == 9:
                     result = result.reshape((3, 3)).tolist()
                 else:
