@@ -3,7 +3,6 @@ import cv2 as cv
 
 def detect_keypt_des(frame):
     sift = cv.xfeatures2d.SIFT_create()
-    print(frame.imageL.shape)
     yield sift.detectAndCompute(frame.imageL, None)
     yield sift.detectAndCompute(frame.imageR, None)
 
