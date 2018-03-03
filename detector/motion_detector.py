@@ -3,8 +3,10 @@ import cv2 as cv
 import math
 import scipy.optimize
 
+
 class MotionDetectionFailed(Exception):
     pass
+
 
 def detect_motion(frame):
     prevframe = frame.prev_frame
@@ -24,9 +26,12 @@ def detect_motion(frame):
     #                   multi_probe_level = 1) #2
 
     # Find matches between the two images by the means of some dark magic
-    flann = cv.FlannBasedMatcher(index_params_sift, search_params)
-    matches01 = flann.knnMatch(frame.des_right, frame.des_left, k=2)
-    matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
+    try:
+        flann = cv.FlannBasedMatcher(index_params_sift, search_params)
+        matches01 = flann.knnMatch(frame.des_right, frame.des_left, k=2)
+        matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
+    except Exception:
+        raise MotionDetectionFailed("Not enough matches")
 
     pts2 = []
     pts1 = []
