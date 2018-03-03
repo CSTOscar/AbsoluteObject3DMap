@@ -156,6 +156,10 @@ class Camera:
                 self.RT = Camera.generate_RT_from_R_T(self.R, self.T)
                 self.M = self.K @ self.RT
                 self.M_pinv = np.linalg.pinv(self.M)
+
+                # add distortion to be used by depth_detector
+                self.Dist = distortion
+
                 return True
         print('Warning: The camera calibration failed, camera parameter is not updated')
         return False
