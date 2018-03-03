@@ -1,4 +1,4 @@
-from detector.depth_detector import detect_depth, detect_depth_image_3D
+from detector.depth_detector import detect_depth, detect_depth_image_3D, detect_depth_without_filter
 from frame.frame import generate_raw_frame_chain_from_images
 from camera.camera import Camera
 import numpy as np
@@ -38,9 +38,9 @@ from laspy.file import File
 
 if __name__ == '__main__':
 
-    for i in range(1, 2):
-        image_left = cv2.imread('images/image_left/MouldShotTest%s_l.JPG' % (i))
-        image_right = cv2.imread('images/image_right/MouldShotTest%s_r.JPG' % (i))
+    for i in range(1, 7):
+        image_left = cv2.imread('images/image_left/20180226test%s_l.jpg' % (i))
+        image_right = cv2.imread('images/image_right/20180226test%s_r.JPG' % (i))
         R = np.asmatrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         T = np.asmatrix([[0], [0], [0]])
         camera_input = Camera(86500, 86500, 0.035, 2448 / 2, 3264 / 2, R, T)
@@ -52,7 +52,7 @@ if __name__ == '__main__':
         # reshaped_img = image_3d.reshape((image_3d.shape[0] * image_3d.shape[1], 3))
 
         # depth map
-        depth_map  = detect_depth(frame_input[0])
+        depth_map  = detect_depth_without_filter(frame_input[0])
 
 
         # # turn them into point cloud
