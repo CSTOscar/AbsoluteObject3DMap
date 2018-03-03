@@ -7,7 +7,7 @@ VIDEO_PATH_L = '../../data/video_files/test_left.mp4'
 VIDEO_PATH_R = '../../data/video_files/test_right.mp4'
 VIDEO_PATH_C = '/Users/zijunyan/Downloads/video_cal.mp4'
 FRAME_DIR_PATH = '../../data/image_files'
-STEP = 10
+STEP = 4
 
 # images_cal = video_process.capture_frames_from_video(VIDEO_PATH_C, 5)
 

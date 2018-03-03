@@ -2,6 +2,43 @@ import numpy as np
 import cv2 as cv
 import math
 import scipy.optimize
+import matplotlib.pyplot as plt
+import random
+
+
+def debugPlot(p, xi, px0, px1, px2, K, pts1, pts3):
+    R,_ = cv.Rodrigues(xi[3:])
+    pi = K @ p
+    pj = K @ (R @ p + xi[:3, np.newaxis])
+
+    pts0 = (pi[:2, :] / pi[2, :]).transpose()
+    pts2 = (pj[:2, :] / pj[2, :]).transpose()
+
+    nn, two = pts0.shape
+    print(nn)
+    print(px0.shape)
+
+    px0p = px0
+    px1p = px1
+    px2p = px2
+    px3p = px2
+    for i in range(nn):
+        colour = (random.randint(60, 256), random.randint(0, 200), random.randint(20, 200))
+        j = i  # random.randint(0, nn-1)
+        # colour = (depth[j] * 50, 0, 256 - depth[j] * 50)
+        # colour = hsv2rgb(depth[j] * 0.22, 1, 1)
+        # print(tuple(pts0[j,:].astype(int).tolist()), tuple(pts1[j,:].astype(int).tolist()), disp[j], depth[j])
+        px0p = cv.circle(px0p, tuple(pts0[j, :].astype(int).tolist()), 10, colour, -1)
+        px1p = cv.circle(px1p, tuple(pts1[j, :].astype(int).tolist()), 10, colour, -1)
+        px2p = cv.circle(px2p, tuple(pts2[j, :].astype(int).tolist()), 10, colour, -1)
+        px3p = cv.circle(px3p, tuple(pts3[j, :].astype(int).tolist()), 10, colour, -1)
+
+    plt.subplot(141), plt.imshow(px0p)
+    plt.subplot(142), plt.imshow(px1p)
+    plt.subplot(143), plt.imshow(px2p)
+    plt.subplot(144), plt.imshow(px3p)
+    plt.show()
+
 
 class MotionDetectionFailed(Exception):
     pass
@@ -126,5 +163,7 @@ def detect_motion(frame):
 
     xi0 = np.array([0., 0., 0., 0., 0., 0.])
     xi = scipy.optimize.fmin(lambda xi: slamResidualMatches(p, xi, K, ref), xi0)
+    print(xi)
+    debugPlot(p, xi, frame.imageL, frame.imageR, prevframe.imageL, K, pts1, pts2)
 
     return xi
