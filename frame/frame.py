@@ -4,6 +4,10 @@ from detector.motion_detector import detect_motion
 from detector.depth_detector import detect_depth
 from detector.keypt_des_detector import detect_keypt_des
 from detector.motion_detector import MotionDetectionFailed
+from detector.depth_detector import DepthDetectionFailed
+from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 # TODO: debug, test and check for error message and logic
@@ -11,6 +15,32 @@ from detector.motion_detector import MotionDetectionFailed
 def new_object_projection(frame_id, clazz, score, world_coordinate, scale):
     return {'frame_id': frame_id, 'class': clazz, 'score': score,
             'position': world_coordinate, 'scale': scale}
+
+
+def motion_check_plot(frames):
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+
+    XYZUVW = []
+    for i, frame in enumerate(frames):
+        position, direction = frame.camera.generate_camera_position_direction_from_R_T()
+        position.extend(direction)
+        XYZUVW.append(position)
+
+    XYZUVW_T = np.array(XYZUVW).T
+    print(XYZUVW_T)
+    ax.quiver(XYZUVW_T[0], XYZUVW_T[1], XYZUVW_T[2], XYZUVW_T[3], XYZUVW_T[4], XYZUVW_T[5])
+    plt.show()
+
+
+def collect_projections_from_frames(frames, confidence=0.8):
+    projections = []
+    for frame in frames:
+        projections.extend(frame.get_objects_projection_with_confidence_more_than(confidence))
+    return projections
 
 
 def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
@@ -26,13 +56,14 @@ def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
     frame_list[0].set_prev_frame(None)
     # if there is more set one frame
     if len(frame_list) > 1:
-
         frame_list[0].set_next_frame(frame_list[1])
         for i in range(1, len(frame_list) - 1):
             frame_list[i].set_prev_frame(frame_list[i - 1])
             frame_list[i].set_next_frame(frame_list[i + 1])
-        frame_list[-1].set_prev_frame(frame_list[len(frame_list) - 1])
+        frame_list[-1].set_prev_frame(frame_list[-2])
         frame_list[-1].set_next_frame(None)
+    else:
+        frame_list[0].set_next_frame(None)
 
     return frame_list
 
@@ -55,6 +86,7 @@ class Frame:
         self.motion_info_generated = False
         self.camera_extrinsic_set = False
         self.kp_des_set = False
+        self.projections_generated = False
 
         # id for different frame checking in later world model
         self.id = Frame.get_unique_id()
@@ -117,8 +149,11 @@ class Frame:
     def generate_set_depth_info(self):
         if not self.depth_info_generated:
             if self.kp_des_set:
-                self.depth_info = detect_depth(self)
-                self.depth_info_generated = True
+                try:
+                    self.depth_info = detect_depth(self)
+                    self.depth_info_generated = True
+                except DepthDetectionFailed as depth_detection_failed:
+                    print('FATAL: ', depth_detection_failed.args)
             else:
                 print('FATAL: kp_des not set')
         else:
@@ -142,15 +177,24 @@ class Frame:
             print('FATAL: prev_frame is not set or prev_kp_des is not set')
 
     # TODO: fit this to the slam implementation
+
     def generate_update_camera_extrinsic_parameters_based_on_prev_frame(self):
+        def yx_to_xy(vector):
+            temp = vector[0]
+            vector[0] = vector[1]
+            vector[1] = temp
+            return vector
+
         if self.prev_frame_set and self.motion_info_generated:
             if not self.camera_extrinsic_set:
                 if self.prev_frame.camera_extrinsic_set:
                     self.camera.update_RT(self.prev_frame.camera.RT)
-                    vec6 = detect_motion(self)
-                    transition_vec = vec6[0:3]
-                    rotation_vec = vec6[3:6]
-                    self.camera.update_extrinsic_parameters_by_world_camera_transformation(transition_vec, rotation_vec)
+                    vec6 = self.motion_info
+                    transition_vec = (vec6[0:3])
+                    rotation_vec = (vec6[3:6])
+                    self.camera.update_extrinsic_parameters_by_world_camera_transformation(transition_vec,
+                                                                                           rotation_vec)
+                    self.camera_extrinsic_set = True
                 else:
                     print('FATAL: prev_frame camera extrinsic para is not set')
             else:
@@ -164,7 +208,9 @@ class Frame:
             print('FATAL: depth_info is not generated')
         else:
             depths = []
-            for (x, y, d) in self.depth_info:
+            for (xy, d) in self.depth_info:
+                x = xy[0]
+                y = xy[1]
                 x_low = pixel_box[0]
                 x_high = pixel_box[2]
                 y_low = pixel_box[1]
@@ -179,41 +225,43 @@ class Frame:
 
     def generate_set_projections(self):
         if self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set:
-            x_num_pix = self.shape[0]
-            y_num_pix = self.shape[1]
+            if not self.projections_generated:
+                x_num_pix = self.shape[0]
+                y_num_pix = self.shape[1]
 
-            detection_info = self.detection_info
+                detection_info = self.detection_info
 
-            projections = []
+                projections = []
 
-            for detection in detection_info:
-                box = detection['box']
-                pixel_box = [int(box[i] * (x_num_pix if i % 2 == 0 else y_num_pix)) for i in range(4)]
+                for detection in detection_info:
+                    box = detection['box']
+                    pixel_box = [int(box[i] * (x_num_pix if i % 2 == 0 else y_num_pix)) for i in range(4)]
 
-                center = [[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]]
-                # TODO: depth_mean is problematic, find a better metric later!
-                depths = self.get_depths_in_pixel_box(pixel_box)
-                if len(depths) == 0:
-                    # if no depth is detected in the box
-                    continue
+                    center = [[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]]
+                    # TODO: depth_mean is problematic, find a better metric later!
+                    depths = self.get_depths_in_pixel_box(pixel_box)
+                    if len(depths) == 0:
+                        # if no depth is detected in the box
+                        print('Warning: no depth is found for the box, the detection is discarded')
+                        continue
+                    else:
+                        depth = np.mean(depths)
+                        position = self.camera.pixel_depth_to_world(center, depth)
+
+                    # TODO: implement scale later
+                    scale = max(pixel_box)
+                    projections.append(
+                        new_object_projection(self.id, detection['class'], detection['score'], position, scale))
+                    self.projections_generated = True
                 else:
-                    depth = np.mean()
-                    position = self.camera.pixel_depth_to_world(center, depth)
-
-                # TODO: implement scale later
-                scale = max(pixel_box)
-                projections.append(
-                    new_object_projection(self.id, detection['class'], detection['score'], position, scale))
+                    print('Warning: projections generated more than once')
         else:
             print(
                 'FATAL: self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set is false')
 
-    @DeprecationWarning
     def get_objects_projection_with_confidence_more_than(self, confidence):
-        detection_slam_info_filted = filter(lambda e: e['score'] > confidence, self.detection_depth_motion_info)
-        objects = list(map(
-            lambda e: Frame.new_object_projection(self.id, e['class'], e['score'],
-                                                  self.camera.pixel_depth_to_world(e['center'], e['depth']),
-                                                  self.camera.get_cov_by_depth(e['depth'])),
-            detection_slam_info_filted))
-        return objects
+        if self.projections_generated:
+            return list(filter(lambda e: e['score'] >= confidence, self.projections))
+        else:
+            print('Warning: not projections_generated')
+            return []
