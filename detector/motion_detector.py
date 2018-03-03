@@ -23,6 +23,13 @@ def detect_motion(frame):
     #                   key_size = 12,     # 20
     #                   multi_probe_level = 1) #2
 
+    kp2 = prevframe.kp_left
+    kp1 = frame.kp_right
+    kp0 = frame.kp_left
+
+    if len(kp0) < 20 or len(kp1) < 20 or len(kp2) < 20:
+        raise MotionDetectionFailed("Not enough keypoints")
+
     # Find matches between the two images by the means of some dark magic
     flann = cv.FlannBasedMatcher(index_params_sift, search_params)
     matches01 = flann.knnMatch(frame.des_right, frame.des_left, k=2)
@@ -31,9 +38,6 @@ def detect_motion(frame):
     pts2 = []
     pts1 = []
     pts0 = []
-    kp2 = prevframe.kp_left
-    kp1 = frame.kp_right
-    kp0 = frame.kp_left
 
     good01 = {}
 
