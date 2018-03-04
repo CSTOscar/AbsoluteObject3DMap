@@ -13,9 +13,9 @@ import cv2
 
 # TODO: debug, test and check for error message and logic
 
-def new_object_projection(frame_id, clazz, score, world_coordinate, scale):
+def new_object_projection(frame_id, clazz, score, world_coordinate, scale, orientation):
     return {'frame_id': frame_id, 'class': clazz, 'score': score,
-            'position': world_coordinate, 'scale': scale}
+            'position': world_coordinate, 'size': scale, 'orientation': orientation}
 
 
 def motion_check_plot(frames):
@@ -42,22 +42,26 @@ def object_depth_detection_check_plot(frames):
     images = []
     for frame in frames:
         image = copy.copy(frame.imageL)
-        for (xy, depth) in frame.depth_info:
-            # print(image.shape, xy)
-            cv2.circle(image, tuple(xy), 5, RED, thickness=10)
+        if frame.depth_info is not None:
+            for (xy, depth) in frame.depth_info:
+                # print(image.shape, xy)
+                cv2.circle(image, tuple(xy), 2, RED, thickness=4)
         for obj_detect in frame.detection_info:
             if obj_detect['score'] >= 0.7:
-                box = obj_detect['pixel_box']
-                cv2.rectangle(image, tuple(box[0:2]), tuple(box[2:4]), BLUE, thickness=5)
+                if 'pixel_box' in obj_detect.keys():
+                    box = obj_detect['pixel_box']
+                    cv2.rectangle(image, tuple(box[0:2]), tuple(box[2:4]), BLUE, thickness=4)
         images.append(image)
 
     return images
 
 
 def collect_projections_from_frames(frames, confidence=0.8):
+    print('collect_projections_from_frames starts')
     projections = []
     for frame in frames:
         projections.extend(frame.get_objects_projection_with_confidence_more_than(confidence))
+        print('progress check: ', frame.id, ' done.')
     return projections
 
 
@@ -84,6 +88,61 @@ def generate_raw_frame_chain_from_images(imageL_list, imageR_list, raw_camera):
         frame_list[0].set_next_frame(None)
 
     return frame_list
+
+
+def generate_set_kp_des_in_frame_chain(frames):
+    print('generate_set_kp_des_in_frame_chain starts')
+    for frame in frames:
+        frame.generate_set_kp_des()
+        print('progress check: ', frame.id, ' done.')
+
+
+def generate_set_detection_info_in_frame_chain(frames, detector):
+    print('generate_set_detection_info_in_frame_chain starts')
+
+    for frame in frames:
+        frame.generate_set_detection_info(detector)
+        print('progress check: ', frame.id, ' done.')
+
+
+def generate_set_depth_info_in_frame_chain(frames):
+    print('generate_set_depth_info_in_frame_chain starts')
+
+    for frame in frames:
+        frame.generate_set_depth_info()
+        print('progress check: ', frame.id, ' done.')
+
+
+def generate_set_motion_info_in_frame_chain(frames):
+    print('generate_set_motion_info_in_frame_chain starts')
+
+    if len(frames) == 1:
+        print('A single frame does not need motion detection')
+    for frame in frames[1:]:
+        frame.generate_set_motion_info()
+        print('progress check: ', frame.id, ' done.')
+
+
+def generate_set_camera_extrinsic_parameters_in_frame_chain(frames):
+    print('generate_set_camera_extrinsic_parameters_in_frame_chain starts')
+
+    for frame in frames[1:]:
+        frame.generate_update_camera_extrinsic_parameters_based_on_prev_frame()
+        print('progress check: ', frame.id, ' done.')
+
+
+def generate_set_projections_in_frame_chain(frames):
+    print('generate_set_projections_in_frame_chain starts')
+    for frame in frames:
+        frame.generate_set_projections()
+        print('progress check: ', frame.id, ' done.')
+
+
+def setup_first_frame_in_frame_chain(frames):
+    frame = frames[0]
+    frame.camera_extrinsic_set = True
+    frame.motion_info = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    frame.motion_info_generated = True
 
 
 class Frame:
@@ -113,7 +172,7 @@ class Frame:
         self.imageL = imageL
         self.imageR = imageR
         if imageL.shape != imageR.shape:
-            print('FATAL: image LR shapes are different ')
+            print('FATAL in frame', self.id, ' : image LR shapes are different')
         self.shape = self.imageL.shape
         self.camera = raw_camera
         self.next_frame = None
@@ -144,28 +203,28 @@ class Frame:
             self.prev_frame_set = True
             self.prev_frame = frame
         else:
-            print('Warning: set prev_frame more than once')
+            print('Warning in frame', self.id, ' : set prev_frame more than once')
 
     def set_next_frame(self, frame):
         if not self.next_frame_set:
             self.next_frame_set = True
             self.next_frame = frame
         else:
-            print('Warning: set prev_frame more than once')
+            print('Warning in frame', self.id, ' : set prev_frame more than once')
 
     def generate_set_kp_des(self):
         if not self.kp_des_set:
             (self.kp_left, self.des_left), (self.kp_right, self.des_right) = detect_keypt_des(self)
             self.kp_des_set = True
         else:
-            print('Warning: self.kp_des_set more than once')
+            print('Warning in frame', self.id, ' : self.kp_des_set more than once')
 
     def generate_set_detection_info(self, detector):
         if not self.detection_info_generated:
             self.detection_info_generated = True
             self.detection_info = detector.detect_object(self.imageL)
         else:
-            print('Warning: generate_set detection_info more than once')
+            print('Warning in frame', self.id, ' : generate_set detection_info more than once')
 
     def generate_set_depth_info(self):
         if not self.depth_info_generated:
@@ -175,10 +234,12 @@ class Frame:
                     self.depth_info_generated = True
                 except DepthDetectionFailed as depth_detection_failed:
                     print('FATAL: ', depth_detection_failed.args)
+                    self.depth_info = []
+                    self.depth_info_generated = True
             else:
-                print('FATAL: kp_des not set')
+                print('FATAL in frame', self.id, ' : kp_des_set ', self.kp_des_set)
         else:
-            print('Warning: generate_set depth_info more than once')
+            print('Warning in frame', self.id, ' : generate_set depth_info more than once')
 
     # TODO: fit this to the slam implementation
     def generate_set_motion_info(self):
@@ -188,14 +249,15 @@ class Frame:
                     self.motion_info = detect_motion(self)
                     self.motion_info_generated = True
                 except MotionDetectionFailed as motion_detection_fail:
-                    print('FATAL: ', motion_detection_fail.args)
+                    print('FATAL:  in frame', self.id, ' ', motion_detection_fail.args)
                     self.motion_info = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
                     self.motion_info_generated = True
 
             else:
-                print('Warning: generate_set depth_info more than once')
+                print('Warning in frame', self.id, ' : generate_set depth_info more than once')
         else:
-            print('FATAL: prev_frame is not set or prev_kp_des is not set')
+            print('FATAL in frame', self.id, ' : prev_frame_set, prev_kp_des_generated', self.prev_frame_set,
+                  self.prev_frame.kp_des_set)
 
     # TODO: fit this to the slam implementation
 
@@ -217,12 +279,11 @@ class Frame:
                                                                                            rotation_vec)
                     self.camera_extrinsic_set = True
                 else:
-                    print('FATAL: prev_frame camera extrinsic para is not set')
+                    print('FATAL in frame', self.id, ' : prev_frame camera extrinsic para is not set')
             else:
-                print('Warning: camera_extrinsic_parameters set more than once')
+                print('Warning in frame', self.id, ' : camera_extrinsic_parameters set more than once')
         else:
-            print('FATAL: prev_frame is not set (the first frame should also be set to None) '
-                  'or the motion_info is not generated')
+            print('FATAL in frame', self.id, ' : prev_frame_set', self.prev_frame_set)
 
     def get_depths_in_pixel_box(self, pixel_box):
         if not self.depth_info_generated:
@@ -240,12 +301,26 @@ class Frame:
                 if x_low <= x <= x_high and y_low <= y <= y_high:
                     depths.append(d)
 
-            if len(depths) == 0:
-                print('Warning: no depth is in the detection box')
+            # if len(depths) == 0:
+            #     print('Warning: no depth is in the detection box')
 
             return depths
 
+    def find_size(self, pixel_box, depth):
+        camera = self.camera
+        pt1 = [pixel_box[0], pixel_box[1]]
+        pt2 = [pixel_box[2], pixel_box[3]]
+        pt3 = [pixel_box[2], pixel_box[1]]
+
+        ptw1 = np.asarray(camera.pixel_depth_to_world(pt1, depth))
+        ptw2 = np.asarray(camera.pixel_depth_to_world(pt2, depth))
+        ptw3 = np.asarray(camera.pixel_depth_to_world(pt3, depth))
+
+        scale = max([np.linalg.norm(ptw2 - ptw1), np.linalg.norm(ptw3 - ptw1)])
+        return scale
+
     def generate_set_projections(self):
+        camera_position, _ = self.camera.generate_camera_position_direction_from_R_T()
         if self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set:
             if not self.projections_generated:
                 y_num_pix = self.shape[0]
@@ -259,36 +334,38 @@ class Frame:
                     box = detection['box']
                     pixel_box = [int(box[i] * (x_num_pix if i % 2 == 0 else y_num_pix)) for i in range(4)]
                     detection['pixel_box'] = pixel_box
-                    # print(pixel_box)
                     center = [[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]]
                     # TODO: depth_mean is problematic, find a better metric later!
                     depths = self.get_depths_in_pixel_box(pixel_box)
                     if len(depths) == 0:
-                        # if no depth is detected in the box
-                        print('Warning: no depth is found for the box, the detection is discarded')
                         continue
                     else:
-                        print(depths)
                         depth = np.mean(depths)
                         position = self.camera.pixel_depth_to_world(center, depth)
 
-                    # TODO: implement scale later
-                    scale = max(pixel_box)
+                    scale = self.find_size(pixel_box, depth)
+
+                    orientation = np.array(position) - np.array(camera_position)
+                    orientation = orientation / np.linalg.norm(orientation)
+
                     projections.append(
-                        new_object_projection(self.id, detection['class'], detection['score'], position, scale))
+                        new_object_projection(self.id, detection['class'], detection['score'], position, scale,
+                                              orientation))
 
                 self.projections = projections
                 self.projections_generated = True
 
             else:
-                print('Warning: projections generated more than once')
+                print('Warning in frame', self.id, ' : projections generated more than once')
         else:
             print(
-                'FATAL: self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set is false')
+                'FATAL in frame', self.id,
+                ' : detection_info_generated, depth_info_generated,camera_extrinsic_set ',
+                self.detection_info_generated, self.depth_info_generated, self.camera_extrinsic_set)
 
     def get_objects_projection_with_confidence_more_than(self, confidence):
         if self.projections_generated:
             return list(filter(lambda e: e['score'] >= confidence, self.projections))
         else:
-            print('Warning: not projections_generated')
+            print('Warning in frame', self.id, ' : not projections_generated')
             return []
