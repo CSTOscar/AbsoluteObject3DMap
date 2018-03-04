@@ -17,7 +17,7 @@ imgpoints = []  # 2d points in image plane.
 
 images = glob.glob('*.jpg')
 
-fname = 'IMG_1385.JPG'
+fname = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/chess_board_image/IMG_1389.JPG'
 
 img = cv2.imread(fname)
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)

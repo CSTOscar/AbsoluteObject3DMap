@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 xyz = np.asmatrix([[1], [1], [1], [1]])
 
@@ -25,3 +26,7 @@ print(zeros)
 
 E = np.concatenate((RconT, zeros), axis=0)
 print(E)
+
+mat = np.array([1, 2, 3], dtype=np.float64)
+x = cv2.Rodrigues(mat)
+print(x)
