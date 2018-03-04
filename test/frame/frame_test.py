@@ -12,7 +12,7 @@ VIDEO_PATH_L = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_fil
 VIDEO_PATH_R = '/Users/zijunyan/Desktop/Oscar/AbsoluteObject3DMap/data/video_files/test_right.mp4'
 VIDEO_PATH_C = '/Users/zijunyan/Downloads/video_cal.mp4'
 FRAME_DIR_PATH = '../../data/image_files'
-STEP = 100
+STEP = 10
 
 # images_cal = video_process.capture_frames_from_video(VIDEO_PATH_C, 5)
 
@@ -112,7 +112,7 @@ projections = frame_.collect_projections_from_frames(frames, confidence=0.70)
 print(projections)
 for frame in frames:
     position, direction = frame.camera.generate_camera_position_direction_from_R_T()
-    print('fdsa', position, direction)
+    # print('fdsa', position, direction)
 
 check_images = frame_.object_depth_detection_check_plot(frames[1:])
 
