@@ -4,16 +4,20 @@ import numpy as np
 from sklearn import mixture
 
 
+def new_object(position, clazz, orientation, size):
+    return {'position': position, 'class': clazz, 'orientation': orientation, 'size': size}
+
+
 class World:
     def __init__(self):
         self.objects_projection = []
         self.objects = []
 
-    def add_objects_projection_from_frame(self, frame, confidence):
-        self.objects_projection.extend(frame.get_objects_projection_with_confidence_more_than(confidence))
+    def add_projections(self, projections):
+        self.objects_projection.extend(projections)
 
     def unify_objects_projection_get_object(self):
-        print('doing unify')
+        # print('doing unify')
         map_class_to_projection = {}
         for projection in self.objects_projection:
             # print(projection)
@@ -41,31 +45,27 @@ class World:
 
             projections_index = projection_bayesian_gaussian_mixture.predict(projection_position)
             projection_mixture_means = projection_bayesian_gaussian_mixture.means_
-            projection_mixture_precision = projection_bayesian_gaussian_mixture.precisions_
             if not projection_bayesian_gaussian_mixture.converged_:
                 print('FATAL: object projections cannot converge, World.objects is not generated')
                 return
 
-            print(projections_index)
+            projection_cluster = World.generate_projection_cluster(projections, projections_index)
 
-            cluster_index_set = set(projections_index)
-            print(cluster_index_set)
-            projection_cluster = {}
-            for i in cluster_index_set:
-                projection_cluster[i] = []
+            # print(projection_cluster)
+            # print(projections_index)
+            cluster_max_size = max(list(map(lambda e: len(e), projection_cluster.values())))
 
-            for i in range(len(projections)):
-                # print('projections len', len(projections))
-                # print('projections_index len', len(projections_index))
-                # print('projection_cluster len', len(projection_cluster))
-                projection_cluster[projections_index[i]].append(projections[i])
+            abandoning_index = []
+            for i, c in projection_cluster.items():
+                size = len(c)
+                if size / cluster_max_size < 0.5:
+                    abandoning_index.append(i)
+
+            for i in abandoning_index:
+                projection_cluster.pop(i)
 
             for cluster_index in projection_cluster.keys():
                 projections_group = projection_cluster[cluster_index]
-                print('-----------start------------')
-                for projection in projections_group:
-                    print(projection)
-                print('-----------end------------')
                 frame_list = list(map(lambda e: e['frame_id'], projections_group))
                 frame_set = set(frame_list)
                 class_list = list(map(lambda e: e['class'], projections_group))
@@ -76,39 +76,60 @@ class World:
 
                 if len(frame_list) != len(frame_set):
                     print('WARNING! a projection cluster contains multiple projections in one frame')
-                    print(class_set)
+                    # print(class_set)
                     max_repeat = max([frame_list.count(i) for i in frame_set])
-                    print(max_repeat)
+                    # print(max_repeat)
                     projection_group_gaussian_mixture = mixture.GaussianMixture(n_components=max_repeat,
                                                                                 covariance_type='full')
                     projections_group_position = list(map(lambda e: e['position'], projections_group))
                     projection_group_gaussian_mixture.fit(projections_group_position)
+
+                    predictions = projection_group_gaussian_mixture.predict(projections_group)
+
+                    projections_group_cluster = World.generate_projection_cluster(projections_group, predictions)
 
                     if not projection_group_gaussian_mixture.converged_:
                         # TODO: handle this later
                         print('FATAL: object projections cannot converge, World.objects is not generated')
 
                     projection_group_mixture_means = projection_group_gaussian_mixture.means_
-                    projection_group_mixture_precisions = projection_group_gaussian_mixture.precisions_
 
                     projection_group_index_list = projection_group_gaussian_mixture.predict(projections_group_position)
                     projection_group_index_set = set(projection_group_index_list)
 
                     if len(projection_group_index_set) < max_repeat:
                         print('WARNING: fail to distinguish the object has the same class')
-                    for i in range(max_repeat):
+
+                    for i, projs in projections_group_cluster.items():
+                        orientation, size = World.generate_orientation_size_from_projections(projs)
                         new_objects.append(
-                            World.new_object(list(projection_group_mixture_means[i]),
-                                             projection_group_mixture_precisions[i].tolist(),
-                                             list(class_set)[0]))
+                            new_object(list(projection_group_mixture_means[i]),
+                                       list(class_set)[0], orientation, size))
                 else:
+                    orientation, size = World.generate_orientation_size_from_projections(projections_group)
                     new_objects.append(
-                        World.new_object(list(projection_mixture_means[cluster_index]),
-                                         projection_mixture_precision[cluster_index].tolist(),
-                                         list(class_set)[0]))
+                        new_object(list(projection_mixture_means[cluster_index]),
+                                   list(class_set)[0], orientation, size))
 
         self.objects = new_objects
 
     @staticmethod
-    def new_object(position, precision, clazz):
-        return {'position': position, 'precision': precision, 'class': clazz, 'direction': [0.0, 0.0, 0.0], 'size': 1.0}
+    def generate_orientation_size_from_projections(projections):
+        orientation = sum(list(map(lambda e: e['orientation'] / np.linalg.norm(e['orientation']), projections)))/ len(projections)
+        orientation = orientation / np.linalg.norm(orientation)
+        size = np.mean(np.array(list(map(lambda e: e['size'], projections))))
+        return orientation, size
+
+    @staticmethod
+    def generate_projection_cluster(projections, predictions):
+        prediction_index_set = set(predictions)
+
+        projection_cluster = {}
+
+        for prediction_index in prediction_index_set:
+            projection_cluster[prediction_index] = []
+
+        for i, projection in enumerate(projections):
+            projection_cluster[predictions[i]].append(projection)
+
+        return projection_cluster

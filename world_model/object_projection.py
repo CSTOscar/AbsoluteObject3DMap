@@ -1,3 +1,4 @@
+@DeprecationWarning
 class ObjectProjection:
     id_seed = 0
 
