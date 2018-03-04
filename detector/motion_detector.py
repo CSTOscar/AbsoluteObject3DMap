@@ -71,9 +71,8 @@ def detect_motion(frame):
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    print()
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise MotionDetectionFailed("Not enough matches")
     # we should already know this matrix? Wierdly, we get something different than last time.
@@ -84,7 +83,7 @@ def detect_motion(frame):
     pts1 = pts1[mask.ravel() == 1]
     pts2 = pts2[mask.ravel() == 1]
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise MotionDetectionFailed("Not enough matches")
 
@@ -94,7 +93,7 @@ def detect_motion(frame):
     pts2 = pts2[mask.ravel() == 1]
 
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise MotionDetectionFailed("Not enough matches")
 

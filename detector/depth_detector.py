@@ -71,9 +71,8 @@ def detect_depth(frame):
     pts1 = np.int32(pts1)
     pts2 = np.int32(pts2)
 
-    print()
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise DepthDetectionFailed("Not enough matches")
     # we should already know this matrix? Wierdly, we get something different than last time.
@@ -84,7 +83,7 @@ def detect_depth(frame):
     pts1 = pts1[mask.ravel() == 1]
     pts2 = pts2[mask.ravel() == 1]
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise DepthDetectionFailed("Not enough matches")
 
@@ -94,7 +93,7 @@ def detect_depth(frame):
     pts2 = pts2[mask.ravel() == 1]
 
     k = pts0.shape[0]
-    print(k)
+    # print(k)
     if k < 15:
         raise DepthDetectionFailed("Not enough matches")
 
@@ -123,13 +122,10 @@ def detect_depth(frame):
     disp = ((L @ pts0hom) - (L @ pts1hom))[0, :]
     depth = B / disp
 
-    print('disp', disp)
-    print(pts0hom)
-    print(pts1hom)
-
     pixel_points = pts1hom.T[:, :2].astype(dtype=np.int_).tolist()
 
     depths = []
+    # print(pts0hom)
     for i, pixel_point in enumerate(pixel_points):
         depths.append((pixel_point, depth[i]))
 

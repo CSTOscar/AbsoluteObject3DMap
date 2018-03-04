@@ -5,6 +5,11 @@ from research.object_detection.utils import label_map_util
 
 # A persist object which provide a detection info
 
+def reorder_box_xy(box):
+    box[0], box[1], box[2], box[3] = box[1], box[0], box[3], box[2]
+    return box
+
+
 class ObjectorDetector:
     def __init__(self, ckpt_file_path, label_file_path, num_classes):
         print('Loading tensorflow graph')
@@ -36,13 +41,13 @@ class ObjectorDetector:
                 (boxes, scores, classes, num) = sess.run(
                     [self.detection_boxes, self.detection_scores, self.detection_classes, self.num_detections],
                     feed_dict={self.image_tensor: image})
-            return ObjectorDetector.create_image_detection_record(boxes[0], scores[0], classes[0], num[0]), \
-                   (boxes, scores, classes, num)
+            return ObjectorDetector.create_image_detection_record(boxes[0], scores[0], classes[0], num[0])  # , \
+            # (boxes, scores, classes, num)
 
     @staticmethod
     def create_image_detection_record(boxes, scores, classes, num):
         record = []
         for i in range(int(num)):
-            record.append({'box': boxes[i], 'score': scores[i], 'class': classes[i]})
+            record.append({'box': reorder_box_xy(boxes[i]), 'score': scores[i], 'class': classes[i]})
         sorted(record, key=lambda e: e['score'], reverse=True)
         return record
