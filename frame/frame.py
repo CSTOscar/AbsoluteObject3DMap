@@ -8,6 +8,7 @@ from detector.depth_detector import DepthDetectionFailed
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
+import cv2
 
 
 # TODO: debug, test and check for error message and logic
@@ -31,9 +32,26 @@ def motion_check_plot(frames):
         XYZUVW.append(position)
 
     XYZUVW_T = np.array(XYZUVW).T
-    print(XYZUVW_T)
     ax.quiver(XYZUVW_T[0], XYZUVW_T[1], XYZUVW_T[2], XYZUVW_T[3], XYZUVW_T[4], XYZUVW_T[5])
     plt.show()
+
+
+def object_depth_detection_check_plot(frames):
+    RED = (0, 0, 255)
+    BLUE = (255, 0, 0)
+    images = []
+    for frame in frames:
+        image = copy.copy(frame.imageL)
+        for (xy, depth) in frame.depth_info:
+            # print(image.shape, xy)
+            cv2.circle(image, tuple(xy), 5, RED, thickness=10)
+        for obj_detect in frame.detection_info:
+            if obj_detect['score'] >= 0.7:
+                box = obj_detect['pixel_box']
+                cv2.rectangle(image, tuple(box[0:2]), tuple(box[2:4]), BLUE, thickness=5)
+        images.append(image)
+
+    return images
 
 
 def collect_projections_from_frames(frames, confidence=0.8):
@@ -109,7 +127,10 @@ class Frame:
         self.des_right = None
 
         # property of the frame: detection, depth
+        # box[yx,yx]
         self.detection_info = None
+
+        # [([yx],d)]
         self.depth_info = None
 
         # property of the frame and the previous frame: motion of camera
@@ -179,11 +200,11 @@ class Frame:
     # TODO: fit this to the slam implementation
 
     def generate_update_camera_extrinsic_parameters_based_on_prev_frame(self):
-        def yx_to_xy(vector):
-            temp = vector[0]
-            vector[0] = vector[1]
-            vector[1] = temp
-            return vector
+        # def yx_to_xy(vector):
+        #     temp = vector[0]
+        #     vector[0] = vector[1]
+        #     vector[1] = temp
+        #     return vector
 
         if self.prev_frame_set and self.motion_info_generated:
             if not self.camera_extrinsic_set:
@@ -206,6 +227,7 @@ class Frame:
     def get_depths_in_pixel_box(self, pixel_box):
         if not self.depth_info_generated:
             print('FATAL: depth_info is not generated')
+            return []
         else:
             depths = []
             for (xy, d) in self.depth_info:
@@ -219,15 +241,15 @@ class Frame:
                     depths.append(d)
 
             if len(depths) == 0:
-                print('FATAL: no depth is in the detection box')
+                print('Warning: no depth is in the detection box')
 
             return depths
 
     def generate_set_projections(self):
         if self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set:
             if not self.projections_generated:
-                x_num_pix = self.shape[0]
-                y_num_pix = self.shape[1]
+                y_num_pix = self.shape[0]
+                x_num_pix = self.shape[1]
 
                 detection_info = self.detection_info
 
@@ -236,7 +258,8 @@ class Frame:
                 for detection in detection_info:
                     box = detection['box']
                     pixel_box = [int(box[i] * (x_num_pix if i % 2 == 0 else y_num_pix)) for i in range(4)]
-
+                    detection['pixel_box'] = pixel_box
+                    # print(pixel_box)
                     center = [[(pixel_box[0] + pixel_box[2]) // 2], [(pixel_box[1] + pixel_box[3]) // 2]]
                     # TODO: depth_mean is problematic, find a better metric later!
                     depths = self.get_depths_in_pixel_box(pixel_box)
@@ -245,6 +268,7 @@ class Frame:
                         print('Warning: no depth is found for the box, the detection is discarded')
                         continue
                     else:
+                        print(depths)
                         depth = np.mean(depths)
                         position = self.camera.pixel_depth_to_world(center, depth)
 
@@ -252,9 +276,12 @@ class Frame:
                     scale = max(pixel_box)
                     projections.append(
                         new_object_projection(self.id, detection['class'], detection['score'], position, scale))
-                    self.projections_generated = True
-                else:
-                    print('Warning: projections generated more than once')
+
+                self.projections = projections
+                self.projections_generated = True
+
+            else:
+                print('Warning: projections generated more than once')
         else:
             print(
                 'FATAL: self.detection_info_generated and self.depth_info_generated and self.camera_extrinsic_set is false')
