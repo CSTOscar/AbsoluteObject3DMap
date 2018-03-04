@@ -4,7 +4,7 @@ objects = []
 
 
 def new_object(position, clazz, size, orientation):
-    return {'position': position, 'class': clazz, 'orientation': orientation, 'size': size}
+    return {'position': position, 'id': clazz, 'orientation': orientation, 'size': size}
 
 
 def new_wall(position1, position2, height):

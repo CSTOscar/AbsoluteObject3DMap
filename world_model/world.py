@@ -3,7 +3,7 @@ from sklearn import mixture
 
 
 def new_object(position, clazz, orientation, size):
-    return {'position': position, 'class': clazz, 'orientation': orientation, 'size': size}
+    return {'position': position, 'id': clazz, 'orientation': orientation, 'size': size}
 
 
 class World:
