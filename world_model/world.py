@@ -1,5 +1,3 @@
-from frame import frame as frame_t
-import world_model.object_projection as object_projection_
 import numpy as np
 from sklearn import mixture
 
@@ -17,10 +15,8 @@ class World:
         self.objects_projection.extend(projections)
 
     def unify_objects_projection_get_object(self):
-        # print('doing unify')
         map_class_to_projection = {}
         for projection in self.objects_projection:
-            # print(projection)
             projection_class = projection['class']
             if not (projection_class in map_class_to_projection.keys()):
                 map_class_to_projection[projection_class] = []
@@ -41,7 +37,6 @@ class World:
                 n_components=len(projection_position) // 2 + 1,
                 covariance_type='full')
             projection_bayesian_gaussian_mixture.fit(projection_position)
-            # print(len(projection_position), 'size', len(projection_bayesian_gaussian_mixture.means_))
 
             projections_index = projection_bayesian_gaussian_mixture.predict(projection_position)
             projection_mixture_means = projection_bayesian_gaussian_mixture.means_
@@ -51,8 +46,6 @@ class World:
 
             projection_cluster = World.generate_projection_cluster(projections, projections_index)
 
-            # print(projection_cluster)
-            # print(projections_index)
             cluster_max_size = max(list(map(lambda e: len(e), projection_cluster.values())))
 
             abandoning_index = []
@@ -115,7 +108,8 @@ class World:
 
     @staticmethod
     def generate_orientation_size_from_projections(projections):
-        orientation = sum(list(map(lambda e: e['orientation'] / np.linalg.norm(e['orientation']), projections)))/ len(projections)
+        orientation = sum(list(map(lambda e: e['orientation'] / np.linalg.norm(e['orientation']), projections))) / len(
+            projections)
         orientation = orientation / np.linalg.norm(orientation)
         size = np.mean(np.array(list(map(lambda e: e['size'], projections))))
         return orientation, size
