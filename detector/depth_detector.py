@@ -9,7 +9,7 @@ class DepthDetectionFailed(Exception):
 
 
 def detect_depth(frame):
-    prevframe = frame.prev_frame
+    # prevframe = frame.prev_frame
 
     # Parameters for flann matching
     search_params = dict(checks=50)
@@ -25,22 +25,22 @@ def detect_depth(frame):
     #                   key_size = 12,     # 20
     #                   multi_probe_level = 1) #2
 
-    kp2 = prevframe.kp_left
+    # kp2 = prevframe.kp_left
     kp1 = frame.kp_right
     kp0 = frame.kp_left
 
-    if len(kp0) < 20 or len(kp1) < 20 or len(kp2) < 20:
+    if len(kp0) < 20 or len(kp1) < 20:  # or len(kp2) < 20:
         raise DepthDetectionFailed("Not enough keypoints")
 
     # Find matches between the two images by the means of some dark magic
     try:
         flann = cv.FlannBasedMatcher(index_params_sift, search_params)
         matches01 = flann.knnMatch(frame.des_right, frame.des_left, k=2)
-        matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
+        # matches02 = flann.knnMatch(prevframe.des_left, frame.des_left, k=2)
     except Exception:
         raise DepthDetectionFailed("Not enough matches")
 
-    pts2 = []
+    # pts2 = []
     pts1 = []
     pts0 = []
 
@@ -53,15 +53,17 @@ def detect_depth(frame):
             p1 = kp1[m.queryIdx].pt
             p0 = kp0[m.trainIdx].pt
             if p0[0] - p1[0] >= 10:
-                good01[m.trainIdx] = m
+                # good01[m.trainIdx] = m
+                pts0.append(p0)
+                pts1.append(p1)
 
     # Finding matches between all three images.
-    for i, (m, n) in enumerate(matches02):
-        if m.distance < lowe * n.distance:
-            if m.trainIdx in good01:
-                pts0.append(kp0[m.trainIdx].pt)
-                pts1.append(kp1[good01[m.trainIdx].queryIdx].pt)
-                pts2.append(kp2[m.queryIdx].pt)
+    # for i, (m, n) in enumerate(matches02):
+    #     if m.distance < lowe * n.distance:
+    #         if m.trainIdx in good01:
+    #             pts0.append(kp0[m.trainIdx].pt)
+    #             pts1.append(kp1[good01[m.trainIdx].queryIdx].pt)
+    #             pts2.append(kp2[m.queryIdx].pt)
 
     B = 0.09
     K = np.array(frame.camera.K)[:3, :3]
@@ -69,7 +71,7 @@ def detect_depth(frame):
 
     pts0 = np.int32(pts0)
     pts1 = np.int32(pts1)
-    pts2 = np.int32(pts2)
+    # pts2 = np.int32(pts2)
 
     k = pts0.shape[0]
     # print(k)
@@ -81,16 +83,16 @@ def detect_depth(frame):
     # We select only inlier points
     pts0 = pts0[mask.ravel() == 1]
     pts1 = pts1[mask.ravel() == 1]
-    pts2 = pts2[mask.ravel() == 1]
+    # pts2 = pts2[mask.ravel() == 1]
     k = pts0.shape[0]
     # print(k)
     if k < 15:
         raise DepthDetectionFailed("Not enough matches")
 
-    F02, mask = cv.findFundamentalMat(pts2, pts0, cv.FM_LMEDS)
-    pts0 = pts0[mask.ravel() == 1]
-    pts1 = pts1[mask.ravel() == 1]
-    pts2 = pts2[mask.ravel() == 1]
+    # F02, mask = cv.findFundamentalMat(pts2, pts0, cv.FM_LMEDS)
+    # pts0 = pts0[mask.ravel() == 1]
+    # pts1 = pts1[mask.ravel() == 1]
+    # pts2 = pts2[mask.ravel() == 1]
 
     k = pts0.shape[0]
     # print(k)
@@ -596,8 +598,3 @@ def detect_depth(frame):
 #     cv2.waitKey(0)
 #
 #     return depth_map
-
-
-
-
-

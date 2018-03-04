@@ -129,6 +129,6 @@ def detect_motion(frame):
     ref = pts2.transpose()
 
     xi0 = np.array([0., 0., 0., 0., 0., 0.])
-    xi = scipy.optimize.fmin(lambda xi: slamResidualMatches(p, xi, K, ref), xi0)
+    xi = scipy.optimize.fmin(lambda xi: slamResidualMatches(p, xi, K, ref), xi0, disp=False)
 
     return xi
