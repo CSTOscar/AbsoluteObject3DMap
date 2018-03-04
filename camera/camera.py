@@ -2,6 +2,7 @@ import numpy as np
 import functools
 import cv2
 from PIL import Image
+from video_process import video_process
 
 
 # WARNING: this is a right handed coordinate system
@@ -117,6 +118,25 @@ def coordinates_input_output_adapter(method):
 
 class Camera:
     DEFAULT_CORNER_SUB_PIX_CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+
+    def calibrate_by_video_and_grid_length(self, video_path, length, step, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
+
+        images_cal = video_process.capture_frames_from_video(video_path, step)
+        K_sum = None
+        num = 0
+        for image_cal in images_cal:
+            updated = self.calibrate_by_images_and_grid_length(image_cal, length, criteria)
+            if updated:
+                num += 1
+                K_sum = self.K if num == 1 else K_sum + self.K
+
+        if num != 0:
+            avrK = K_sum / num
+            self.K = avrK
+            self.update_M_M_pinv_by_K_RT()
+            return True
+        else:
+            return False
 
     def calibrate_by_images_and_grid_length(self, image, length, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
 
