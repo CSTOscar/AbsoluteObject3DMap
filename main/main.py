@@ -31,8 +31,14 @@ def setup():
     detector = od.ObjectorDetector(CKPT_FILE_PATH, LABEL_FILE_PATH, NUM_CLASS)
 
 
-def main(imagesL, imagesR):
-    # set up the initial camera
+def main(imageLR_pairs):
+    # set up the initial cameras
+    imagesL = []
+    imagesR = []
+    for imageLR in imageLR_pairs:
+        imagesL.append(imageLR[0])
+        imagesR.append(imageLR[1])
+
     global camera
     global detector
     frame_list = fm.generate_raw_frame_chain_from_images(imagesL, imagesR, raw_camera=camera)
@@ -47,8 +53,8 @@ def main(imagesL, imagesR):
     world = wd.World()
     world.add_projections(fm.collect_projections_from_frames(frame_list))
     world.unify_objects_projection_get_object()
-    objects = world.objects
-    return frame_list, objects
+
+    return world.get_json()
 
 
 def test():
@@ -65,18 +71,17 @@ def test():
     imagesR = video_process.capture_frames_from_video(VIDEO_PATH_R, STEP)
 
     setup()
-    frames, objects = main(imagesL, imagesR)
+    imagesLR = []
+    for i in range(min(len(imagesL), len(imagesR))):
+        imagesLR.append((imagesL[i], imagesR[i]))
 
-    print(objects)
-    print(len(frames))
+    json = main(imagesLR)
 
-    fm.motion_check_plot(frames)
-    fm.object_depth_detection_check_plot()
+    print(json)
+
+    # fm.motion_check_plot(frames)
+    # fm.object_depth_detection_check_plot()
 
 
-test()
+# test()
 
-if __name__ == "__main__":
-    print('not done')
-    # TODO: do something
-    # main()
