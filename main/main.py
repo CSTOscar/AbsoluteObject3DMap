@@ -1,12 +1,15 @@
 import numpy as np
+import os
 
 from frame import frame as fm
 from world_model import world as wd
 from camera import camera as cm
 from detector import object_detector as od
 
-CKPT_FILE_PATH = '../data/model_files/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb'
-LABEL_FILE_PATH = '../data/label_files/mscoco_label_map.pbtxt'
+cwd = os.path.dirname(os.path.realpath(__file__)) 
+
+CKPT_FILE_PATH = os.path.abspath(cwd + '/../data/model_files/ssd_mobilenet_v1_coco_2017_11_17/frozen_inference_graph.pb')
+LABEL_FILE_PATH = os.path.abspath(cwd + '/../data/label_files/mscoco_label_map.pbtxt')
 NUM_CLASS = 90
 
 detector = None
@@ -31,14 +34,8 @@ def setup():
     detector = od.ObjectorDetector(CKPT_FILE_PATH, LABEL_FILE_PATH, NUM_CLASS)
 
 
-def main(imageLR_pairs):
-    # set up the initial cameras
-    imagesL = []
-    imagesR = []
-    for imageLR in imageLR_pairs:
-        imagesL.append(imageLR[0])
-        imagesR.append(imageLR[1])
-
+def main(imagesL, imagesR):
+    # set up the initial cameras 
     global camera
     global detector
     frame_list = fm.generate_raw_frame_chain_from_images(imagesL, imagesR, raw_camera=camera)
