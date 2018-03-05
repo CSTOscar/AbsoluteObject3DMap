@@ -1,6 +1,5 @@
-camera
-detector
-frame
-main
-video_process
-world_model
+opencv-contrib-python
+Pillow
+scipy
+numpy
+sklearn
