@@ -1,11 +1,9 @@
-import numpy as np
 import copy
 from detector.motion_detector import detect_motion
 from detector.depth_detector import detect_depth
 from detector.keypt_des_detector import detect_keypt_des
 from detector.motion_detector import MotionDetectionFailed
 from detector.depth_detector import DepthDetectionFailed
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
