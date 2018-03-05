@@ -1,9 +1,11 @@
 import numpy as np
 from sklearn import mixture
+import json
 
 
 def new_object(position, clazz, orientation, size):
-    return {'position': position, 'id': clazz, 'orientation': orientation, 'size': size}
+    return {'position': list(map(float, position)), 'id': int(clazz), 'orientation': list(map(float, orientation)),
+            'size': float(size)}
 
 
 class World:
@@ -111,6 +113,7 @@ class World:
         orientation = sum(list(map(lambda e: e['orientation'] / np.linalg.norm(e['orientation']), projections))) / len(
             projections)
         orientation = orientation / np.linalg.norm(orientation)
+        orientation = orientation.tolist()
         size = np.mean(np.array(list(map(lambda e: e['size'], projections))))
         return orientation, size
 
@@ -127,3 +130,7 @@ class World:
             projection_cluster[predictions[i]].append(projection)
 
         return projection_cluster
+
+    def get_json(self):
+        print(self.objects)
+        return json.dumps(self.objects)
