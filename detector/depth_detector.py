@@ -123,7 +123,7 @@ def detect_depth(frame):
     disp = ((L @ pts0hom) - (L @ pts1hom))[0, :]
     depth = B / disp
 
-    pixel_points = pts1hom.T[:, :2].astype(dtype=np.int_).tolist()
+    pixel_points = pts0hom.T[:, :2].astype(dtype=np.int_).tolist()
 
     depths = []
     # print(pts0hom)

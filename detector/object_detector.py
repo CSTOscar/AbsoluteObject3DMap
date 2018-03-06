@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from research.object_detection.utils import label_map_util
+import cv2
 
 
 # A persist object which provide a detection info
@@ -35,6 +36,7 @@ class ObjectorDetector:
         self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
 
     def detect_object(self, image):
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         with self.detection_graph.as_default():
             with tf.Session(graph=self.detection_graph) as sess:
                 image = np.expand_dims(image, axis=0)
