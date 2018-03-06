@@ -54,11 +54,20 @@ def object_depth_detection_check_plot(frames, confidence=0.2):
     return images
 
 
-def collect_projections_from_frames(frames, confidence=0.8):
+def collect_projections_from_frames_by_confidence(frames, confidence=0.8):
     print('collect_projections_from_frames starts')
     projections = []
     for frame in frames:
         projections.extend(frame.get_objects_projection_with_confidence_more_than(confidence))
+        print('progress check: ', frame.id, ' done.')
+    return projections
+
+
+def collect_projections_from_frames_by_confidence_rank(frames, rank=5):
+    print('collect_projections_from_frames starts')
+    projections = []
+    for frame in frames:
+        projections.extend(frame.get_objects_projection_with_confidence_rank_less_than(rank))
         print('progress check: ', frame.id, ' done.')
     return projections
 
@@ -364,6 +373,14 @@ class Frame:
     def get_objects_projection_with_confidence_more_than(self, confidence):
         if self.projections_generated:
             return list(filter(lambda e: e['score'] >= confidence, self.projections))
+        else:
+            print('Warning in frame', self.id, ' : not projections_generated')
+            return []
+
+    def get_objects_projection_with_confidence_rank_less_than(self, rank):
+        if self.projections_generated:
+            projections = sorted(self.projections, key=lambda e: e['score'], reverse=True)
+            return projections[:rank]
         else:
             print('Warning in frame', self.id, ' : not projections_generated')
             return []

@@ -27,6 +27,8 @@ def setup(K0=None):
     #                  [0.00000000e+00, 1.11948374e+03, 5.50850887e+02, 0.00000000e+00],
     #                  [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00]])
     if K0 is not None:
+        K = K0
+    else:
         K = np.asmatrix([[2.01078286e+03, 0.00000000e+00, 4.93720699e+02, 0.00000000e+00],
                          [0.00000000e+00, 2.02736414e+03, 1.01140977e+03, 0.00000000e+00],
                          [0.00000000e+00, 0.00000000e+00, 1.00000000e+00, 0.00000000e+00]])
@@ -60,7 +62,7 @@ def main(imagesL, imagesR, confidence=0.2):
     frames_cache = frame_list
 
     world = wd.World()
-    projections = fm.collect_projections_from_frames(frame_list, confidence=confidence)
+    projections = fm.collect_projections_from_frames_by_confidence(frame_list, confidence=confidence)
     world.add_projections(projections)
     world.unify_objects_projection_get_object()
 
@@ -73,14 +75,28 @@ def main(imagesL, imagesR, confidence=0.2):
     return world.get_json()
 
 
-def get_objects_again(confidence):
+def get_objects_again_confidence(confidence):
     global frames_cache
     if frames_cache is not None:
-        projections = fm.collect_projections_from_frames(frames_cache, confidence)
+        projections = fm.collect_projections_from_frames_by_confidence(frames_cache, confidence)
         world = wd.World()
         world.add_projections(projections)
         world.unify_objects_projection_get_object()
         return world.get_json()
+    else:
+        print('Warning: no frames generated')
+
+
+def get_objects_again_confidence_rank(rank):
+    global frames_cache
+    if frames_cache is not None:
+        projections = fm.collect_projections_from_frames_by_confidence_rank(frames_cache, rank)
+        world = wd.World()
+        world.add_projections(projections)
+        world.unify_objects_projection_get_object()
+        return world.get_json()
+    else:
+        print('Warning: no frames generated')
 
 
 def convert_portrait(image):
@@ -118,7 +134,10 @@ def test():
 
     setup()
     json = main(imgL, imgR)
-
+    print(json)
+    json = get_objects_again_confidence(0.3)
+    print(json)
+    json = get_objects_again_confidence_rank(3)
     print(json)
 
     # fm.motion_check_plot(frames)
