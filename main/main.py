@@ -5,6 +5,7 @@ from frame import frame as fm
 from world_model import world as wd
 from camera import camera as cm
 from detector import object_detector as od
+import cv2
 from PIL import Image
 
 cwd = os.path.dirname(os.path.realpath(__file__))
@@ -70,8 +71,7 @@ def main(imagesL, imagesR, confidence=0.2):
     # images = fm.object_depth_detection_check_plot(frame_list, confidence=confidence)
     # for i, image in enumerate(images):
     #     print('saving image: ', i)
-    #     im = Image.fromarray(image)
-    #     im.save(CHECK_IMAGE_PATH_FORMAT.format(i))
+    #     cv2.imwrite(CHECK_IMAGE_PATH_FORMAT.format(i), image)
     return world.get_json()
 
 
@@ -100,13 +100,9 @@ def get_objects_again_confidence_rank(rank):
 
 
 def convert_portrait(image):
-    print(type(image))
-
     shape = image.shape
-    print(shape)
     if shape[0] < shape[1]:
         image = np.rot90(image, -1, axes=(0, 1))
-        print(image.shape)
     return image
 
 
@@ -123,17 +119,13 @@ def test():
     imagesL = video_process.capture_frames_from_video(VIDEO_PATH_L, STEP)
     imagesR = video_process.capture_frames_from_video(VIDEO_PATH_R, STEP)
 
-    imgL = []
-    imgR = []
-
     for i, image in enumerate(imagesL):
-        imgL.append(convert_portrait(image))
+        imagesL[i] = convert_portrait(image)
 
     for i, image in enumerate(imagesR):
-        imgR.append(convert_portrait(image))
-
+        imagesR[i] = convert_portrait(image)
     setup()
-    json = main(imgL, imgR)
+    json = main(imagesL, imagesR)
     print(json)
     json = get_objects_again_confidence(0.3)
     print(json)
@@ -144,4 +136,4 @@ def test():
     # fm.object_depth_detection_check_plot()
 
 
-test()
+# test()
