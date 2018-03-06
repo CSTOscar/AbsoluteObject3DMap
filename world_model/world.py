@@ -132,5 +132,4 @@ class World:
         return projection_cluster
 
     def get_json(self):
-        print(self.objects)
         return json.dumps(self.objects)

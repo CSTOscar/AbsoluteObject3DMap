@@ -17,4 +17,4 @@ def capture_frames_from_video(video_path, step, frame_name_format='image{}'):
             # cv2.imwrite(frame_file_path_format.format(image_count), image)
             images.append(image)
             image_count += 1
-    return np.asarray(images)
+    return images
