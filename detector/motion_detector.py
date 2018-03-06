@@ -93,7 +93,7 @@ def detect_motion(frame):
     pts2 = pts2[mask.ravel() == 1]
 
     k = pts0.shape[0]
-    # print(k)
+    print("number of matches=", k)
     if k < 15:
         raise MotionDetectionFailed("Not enough matches")
 

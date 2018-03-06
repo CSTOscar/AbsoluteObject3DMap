@@ -34,18 +34,18 @@ def motion_check_plot(frames):
     plt.show()
 
 
-def object_depth_detection_check_plot(frames):
+def object_depth_detection_check_plot(frames, confidence=0.2):
     RED = (0, 0, 255)
     BLUE = (255, 0, 0)
     images = []
     for frame in frames:
-        image = copy.copy(frame.imageL)
+        image = frame.imageL.copy()
         if frame.depth_info is not None:
             for (xy, depth) in frame.depth_info:
                 # print(image.shape, xy)
                 cv2.circle(image, tuple(xy), 2, RED, thickness=4)
         for obj_detect in frame.detection_info:
-            if obj_detect['score'] >= 0.7:
+            if obj_detect['score'] >= confidence:
                 if 'pixel_box' in obj_detect.keys():
                     box = obj_detect['pixel_box']
                     cv2.rectangle(image, tuple(box[0:2]), tuple(box[2:4]), BLUE, thickness=4)

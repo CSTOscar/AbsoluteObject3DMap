@@ -79,7 +79,7 @@ class World:
                     projections_group_position = list(map(lambda e: e['position'], projections_group))
                     projection_group_gaussian_mixture.fit(projections_group_position)
 
-                    predictions = projection_group_gaussian_mixture.predict(projections_group)
+                    predictions = projection_group_gaussian_mixture.predict(projections_group_position)
 
                     projections_group_cluster = World.generate_projection_cluster(projections_group, predictions)
 
