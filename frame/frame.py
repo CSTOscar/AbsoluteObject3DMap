@@ -323,7 +323,7 @@ class Frame:
         ptw2 = np.asarray(camera.pixel_depth_to_world(pt2, depth))
         ptw3 = np.asarray(camera.pixel_depth_to_world(pt3, depth))
 
-        scale = max([np.linalg.norm(ptw2 - ptw1), np.linalg.norm(ptw3 - ptw1)])
+        scale = max([np.linalg.norm(ptw3 - ptw2), np.linalg.norm(ptw3 - ptw1)])
         return scale
 
     def generate_set_projections(self):

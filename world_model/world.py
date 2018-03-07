@@ -53,7 +53,7 @@ class World:
             abandoning_index = []
             for i, c in projection_cluster.items():
                 size = len(c)
-                if size / cluster_max_size < 0.5:
+                if size / cluster_max_size < 0.9 and size != cluster_max_size:
                     abandoning_index.append(i)
 
             for i in abandoning_index:
