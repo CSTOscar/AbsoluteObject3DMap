@@ -133,3 +133,6 @@ class World:
 
     def get_json(self):
         return json.dumps(self.objects)
+    
+    def get_obj(self):
+        return self.objects
