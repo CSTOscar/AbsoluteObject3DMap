@@ -125,7 +125,7 @@ class Camera:
         K_sum = None
         num = 0
         for image_cal in images_cal:
-            updated = self.calibrate_by_images_and_grid_length(image_cal, length, criteria)
+            updated = self.calibrate_by_image_and_grid_length(image_cal, length, criteria)
             if updated:
                 num += 1
                 K_sum = self.K if num == 1 else K_sum + self.K
@@ -138,7 +138,25 @@ class Camera:
         else:
             return False
 
-    def calibrate_by_images_and_grid_length(self, image, length, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
+    def calibrate_by_image_list_and_grid_length(self, images, length, step, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
+
+        K_sum = None
+        num = 0
+        for image_cal in images:
+            updated = self.calibrate_by_image_and_grid_length(image_cal, length, criteria)
+            if updated:
+                num += 1
+                K_sum = self.K if num == 1 else K_sum + self.K
+
+        if num != 0:
+            avrK = K_sum / num
+            self.K = avrK
+            self.update_M_M_pinv_by_K_RT()
+            return True
+        else:
+            return False
+
+    def calibrate_by_image_and_grid_length(self, image, length, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
 
         image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         ret, corners = cv2.findChessboardCorners(image_gray, (7, 6), None)
