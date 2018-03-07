@@ -138,7 +138,7 @@ class Camera:
         else:
             return False
 
-    def calibrate_by_image_list_and_grid_length(self, images, length, step, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
+    def calibrate_by_image_list_and_grid_length(self, images, length, criteria=DEFAULT_CORNER_SUB_PIX_CRITERIA):
 
         K_sum = None
         num = 0
